@@ -1,0 +1,534 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		BA5E00000000000000000013 /* BaselineKit in Frameworks */ = {isa = PBXBuildFile; productRef = BA5E00000000000000000014 /* BaselineKit */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		BA5E00000000000000000016 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BA5E00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BA5E0000000000000000000B;
+			remoteInfo = Baseline;
+		};
+		BA5E00000000000000000027 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BA5E00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BA5E0000000000000000000B;
+			remoteInfo = Baseline;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		BA5E00000000000000000007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BA5E00000000000000000008 /* Baseline.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Baseline.entitlements; sourceTree = "<group>"; };
+		BA5E00000000000000000009 /* Baseline.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Baseline.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BA5E0000000000000000000A /* BaselineUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BaselineUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BA5E00000000000000000022 /* BaselineTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BaselineTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		BA5E00000000000000000004 /* App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = App;
+			sourceTree = "<group>";
+		};
+		BA5E00000000000000000005 /* UITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = UITests;
+			sourceTree = "<group>";
+		};
+		BA5E00000000000000000021 /* AppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AppTests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BA5E0000000000000000000E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BA5E00000000000000000013 /* BaselineKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BA5E00000000000000000011 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BA5E00000000000000000025 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		BA5E00000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				BA5E00000000000000000004 /* App */,
+				BA5E00000000000000000006 /* Config */,
+				BA5E00000000000000000021 /* AppTests */,
+				BA5E00000000000000000005 /* UITests */,
+				BA5E00000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		BA5E00000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BA5E00000000000000000009 /* Baseline.app */,
+				BA5E00000000000000000022 /* BaselineTests.xctest */,
+				BA5E0000000000000000000A /* BaselineUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		BA5E00000000000000000006 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				BA5E00000000000000000007 /* Info.plist */,
+				BA5E00000000000000000008 /* Baseline.entitlements */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		BA5E0000000000000000000B /* Baseline */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BA5E0000000000000000001B /* Build configuration list for PBXNativeTarget "Baseline" */;
+			buildPhases = (
+				BA5E0000000000000000000D /* Sources */,
+				BA5E0000000000000000000E /* Frameworks */,
+				BA5E0000000000000000000F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				BA5E00000000000000000004 /* App */,
+			);
+			name = Baseline;
+			packageProductDependencies = (
+				BA5E00000000000000000014 /* BaselineKit */,
+			);
+			productName = Baseline;
+			productReference = BA5E00000000000000000009 /* Baseline.app */;
+			productType = "com.apple.product-type.application";
+		};
+		BA5E0000000000000000000C /* BaselineUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BA5E0000000000000000001E /* Build configuration list for PBXNativeTarget "BaselineUITests" */;
+			buildPhases = (
+				BA5E00000000000000000010 /* Sources */,
+				BA5E00000000000000000011 /* Frameworks */,
+				BA5E00000000000000000012 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BA5E00000000000000000017 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				BA5E00000000000000000005 /* UITests */,
+			);
+			name = BaselineUITests;
+			packageProductDependencies = (
+			);
+			productName = BaselineUITests;
+			productReference = BA5E0000000000000000000A /* BaselineUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		BA5E00000000000000000023 /* BaselineTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BA5E00000000000000000029 /* Build configuration list for PBXNativeTarget "BaselineTests" */;
+			buildPhases = (
+				BA5E00000000000000000024 /* Sources */,
+				BA5E00000000000000000025 /* Frameworks */,
+				BA5E00000000000000000026 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BA5E00000000000000000028 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				BA5E00000000000000000021 /* AppTests */,
+			);
+			name = BaselineTests;
+			packageProductDependencies = (
+			);
+			productName = BaselineTests;
+			productReference = BA5E00000000000000000022 /* BaselineTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BA5E00000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					BA5E0000000000000000000B = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					BA5E0000000000000000000C = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = BA5E0000000000000000000B;
+					};
+					BA5E00000000000000000023 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = BA5E0000000000000000000B;
+					};
+				};
+			};
+			buildConfigurationList = BA5E00000000000000000018 /* Build configuration list for PBXProject "Baseline" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = BA5E00000000000000000002;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BA5E00000000000000000015 /* XCLocalSwiftPackageReference "BaselineKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = BA5E00000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BA5E0000000000000000000B /* Baseline */,
+				BA5E00000000000000000023 /* BaselineTests */,
+				BA5E0000000000000000000C /* BaselineUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BA5E0000000000000000000F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BA5E00000000000000000012 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BA5E00000000000000000026 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BA5E0000000000000000000D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BA5E00000000000000000010 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BA5E00000000000000000024 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BA5E00000000000000000017 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BA5E0000000000000000000B /* Baseline */;
+			targetProxy = BA5E00000000000000000016 /* PBXContainerItemProxy */;
+		};
+		BA5E00000000000000000028 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BA5E0000000000000000000B /* Baseline */;
+			targetProxy = BA5E00000000000000000027 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		BA5E00000000000000000019 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		BA5E0000000000000000001A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		BA5E0000000000000000001C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/Baseline.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Baseline;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Baseline reads your heart, sleep, breathing, temperature and activity data to learn your usual ranges and notice when they shift. It stays on this device.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Baseline saves the alcohol you log in its journal to Apple Health.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.baseline.Baseline;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		BA5E0000000000000000001D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/Baseline.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Baseline;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Baseline reads your heart, sleep, breathing, temperature and activity data to learn your usual ranges and notice when they shift. It stays on this device.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Baseline saves the alcohol you log in its journal to Apple Health.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.baseline.Baseline;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		BA5E0000000000000000001F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.baseline.BaselineUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Baseline;
+			};
+			name = Debug;
+		};
+		BA5E00000000000000000020 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.baseline.BaselineUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Baseline;
+			};
+			name = Release;
+		};
+		BA5E0000000000000000002A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.baseline.BaselineTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Baseline.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Baseline";
+			};
+			name = Debug;
+		};
+		BA5E0000000000000000002B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.baseline.BaselineTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Baseline.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Baseline";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		BA5E00000000000000000018 /* Build configuration list for PBXProject "Baseline" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BA5E00000000000000000019 /* Debug */,
+				BA5E0000000000000000001A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BA5E0000000000000000001B /* Build configuration list for PBXNativeTarget "Baseline" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BA5E0000000000000000001C /* Debug */,
+				BA5E0000000000000000001D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BA5E0000000000000000001E /* Build configuration list for PBXNativeTarget "BaselineUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BA5E0000000000000000001F /* Debug */,
+				BA5E00000000000000000020 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BA5E00000000000000000029 /* Build configuration list for PBXNativeTarget "BaselineTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BA5E0000000000000000002A /* Debug */,
+				BA5E0000000000000000002B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		BA5E00000000000000000015 /* XCLocalSwiftPackageReference "BaselineKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = BaselineKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BA5E00000000000000000014 /* BaselineKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BaselineKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = BA5E00000000000000000001 /* Project object */;
+}

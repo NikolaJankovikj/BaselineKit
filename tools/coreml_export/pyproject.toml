@@ -1,0 +1,14 @@
+[project]
+name = "coreml-export"
+version = "0.1.0"
+description = "Exports Chronos-2-small to Core ML for the Baseline app"
+requires-python = ">=3.12"
+dependencies = [
+    "chronos-forecasting==2.2.2",
+    "coremltools==9.0",
+    "numpy==2.4.4",
+    "torch==2.11.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
