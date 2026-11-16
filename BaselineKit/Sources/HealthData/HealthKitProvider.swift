@@ -1,7 +1,6 @@
 import Foundation
 import HealthKit
 
-/// Reads Apple Health. Nothing here leaves the device: the queries are local.
 public struct HealthKitProvider: HealthDataProvider {
     public static var isAvailable: Bool { HKHealthStore.isHealthDataAvailable() }
 
@@ -12,13 +11,10 @@ public struct HealthKitProvider: HealthDataProvider {
         self.calendar = calendar
     }
 
-    // MARK: Authorization
-
     private static let beatsPerMinute = HKUnit.count().unitDivided(by: .minute())
     private static let sleepType = HKCategoryType(.sleepAnalysis)
     private static let alcoholType = HKQuantityType(.numberOfAlcoholicBeverages)
 
-    /// The identifier and unit behind each daily metric that is a plain HealthKit quantity.
     private static let quantities: [Metric: (HKQuantityTypeIdentifier, HKUnit)] = [
         .restingHeartRate: (.restingHeartRate, beatsPerMinute),
         .heartRateVariability: (.heartRateVariabilitySDNN, .secondUnit(with: .milli)),
@@ -47,8 +43,6 @@ public struct HealthKitProvider: HealthDataProvider {
         try await store.requestAuthorization(toShare: [Self.alcoholType], read: Self.readTypes)
     }
 
-    // MARK: Daily
-
     public func dailyHistory(days count: Int) async throws -> DailyHistory {
         let days = calendar.days(count: count, endingAt: .now)
         guard let first = days.first, let nightStart = calendar.date(byAdding: .hour, value: -SleepDay.startsHoursBeforeMidnight, to: first) else {
@@ -68,7 +62,6 @@ public struct HealthKitProvider: HealthDataProvider {
         return DailyHistory(days: days, values: values, workouts: try await workouts(from: first))
     }
 
-    /// Mean of a quantity in consecutive buckets; `.nan` for a bucket without samples.
     private func buckets(
         _ identifier: HKQuantityTypeIdentifier, unit: HKUnit, sum: Bool,
         from anchor: Date, every interval: DateComponents, count: Int
@@ -89,7 +82,6 @@ public struct HealthKitProvider: HealthDataProvider {
         }
     }
 
-    /// Merged asleep intervals by sleep day.
     private func asleepIntervals(from start: Date) async throws -> [Date: [DateInterval]] {
         let descriptor = HKSampleQueryDescriptor(
             predicates: [.categorySample(type: Self.sleepType, predicate: HKQuery.predicateForSamples(withStart: start, end: nil))],
@@ -102,8 +94,6 @@ public struct HealthKitProvider: HealthDataProvider {
         }.mapValues(SleepDay.merged)
     }
 
-    /// Nightly mean SDNN: the samples taken while asleep, or all of the sleep day's
-    /// samples when no sleep was recorded for it.
     private func nightlyVariability(days: [Date], from start: Date, sleep: [Date: [DateInterval]]) async throws -> [Double] {
         let type = HKQuantityType(.heartRateVariabilitySDNN)
         let descriptor = HKSampleQueryDescriptor(
@@ -137,8 +127,6 @@ public struct HealthKitProvider: HealthDataProvider {
         }
     }
 
-    // MARK: Intraday
-
     public func intradayHistory(hours: Int) async throws -> IntradayHistory {
         let bin = IntradayHistory.binSeconds
         let end = Date(timeIntervalSinceReferenceDate: (Date.now.timeIntervalSinceReferenceDate / bin).rounded(.down) * bin)
@@ -158,8 +146,6 @@ public struct HealthKitProvider: HealthDataProvider {
         return history
     }
 
-    // MARK: Writing
-
     /// Saves a manual log to Apple Health where Health has a matching type.
     /// Only alcohol has one that a single tap can fill: caffeine in Health is a dose in milligrams.
     public func save(_ log: ManualLog) async throws {
@@ -168,10 +154,6 @@ public struct HealthKitProvider: HealthDataProvider {
         try await store.save(HKQuantitySample(type: Self.alcoholType, quantity: drink, start: log.date, end: log.date))
     }
 
-    // MARK: Background delivery
-
-    /// Runs `onUpdate` whenever Apple Health gets new overnight data, also while the app is
-    /// in the background. Call once per launch, early.
     public func observeOvernightData(_ onUpdate: @escaping @Sendable () async -> Void) async throws {
         let types: [HKSampleType] = [Self.sleepType, HKQuantityType(.restingHeartRate), HKQuantityType(.heartRateVariabilitySDNN)]
         for type in types {

@@ -5,7 +5,6 @@ let package = Package(
     name: "BaselineKit",
     platforms: [.iOS(.v26), .macOS(.v26)],
     products: [
-        // Everything but the screens: the app target links this one product.
         .library(name: "BaselineKit", targets: ["HealthData", "Forecasting", "Insights", "Persistence"]),
     ],
     targets: [

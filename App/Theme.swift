@@ -3,9 +3,7 @@ import HealthData
 import SwiftUI
 
 extension Color {
-    /// Baseline's own accent: a deep teal.
     static let brand = Color(red: 0.07, green: 0.53, blue: 0.55)
-    /// Values outside their expected range.
     static let outside = Color.orange
 
     static let page = Color(uiColor: .systemGroupedBackground)
@@ -39,7 +37,6 @@ extension Metric {
         }
     }
 
-    /// Why the app reads this, in the words of the permission screen.
     var purpose: String {
         switch self {
         case .restingHeartRate: "Rises with strain, poor recovery and oncoming illness."
@@ -73,7 +70,6 @@ extension AnomalyEvent {
     }
 }
 
-/// A rounded card on the page background.
 struct Card<Content: View>: View {
     @ViewBuilder var content: Content
 
@@ -85,7 +81,6 @@ struct Card<Content: View>: View {
     }
 }
 
-/// The small coloured heading of a card.
 struct CardTitle: View {
     var title: String
     var symbol: String
@@ -98,8 +93,6 @@ struct CardTitle: View {
     }
 }
 
-/// Where a value sits relative to its expected range: the range is the tinted stretch in
-/// the middle of the track.
 struct RangeBar: View {
     var observed: Double
     var expected: Band
@@ -133,7 +126,6 @@ struct RangeBar: View {
 }
 
 extension DayAssessment {
-    /// "In range", "Above range" or "Below range"; nil without a value or a range.
     var rangeStatus: String? {
         guard let observed, let expected else { return nil }
         return expected.contains(observed) ? "In range" : observed > expected.upper ? "Above range" : "Below range"

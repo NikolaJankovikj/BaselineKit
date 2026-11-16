@@ -141,11 +141,14 @@ It explains; it does not compute or decide. What that took in practice, from run
 - In the weekly report the model writes only the headline and the focus. The lists of what
   went well and what was flagged are facts and come from code; left to choose, the model
   praised metrics that had got worse.
-- Ask puts the data into the prompt: the summaries the question is about, picked by its
-  words, then the last week at a glance. Asked to choose a lookup tool, the small model often
-  chose the wrong one, and the app then showed that lookup as the answer. An answer that
-  fails the guard gets one retry, told what was wrong; after that the matching summaries
-  are shown. Answers carry the data they were written from ("From your data").
+- Ask runs three agents. Triage sorts the message into a greeting, a question about the
+  user's data, or something else; for the first and last the model writes a short reply and
+  says it is not a general assistant. Research calls lookup tools (sleep, a metric, workouts,
+  logs, flags), each shown in the chat as it is made; the summaries the question's words
+  point to are always added, since the small model sometimes skips or mixes up tools. The
+  writer streams the answer from those lookups in plain words. An answer that fails the
+  guard gets one retry, told what was wrong; after that the lookups are shown. Answers
+  carry their lookups ("From your data · 2 lookups").
 - An out-of-range value on a metric's screen comes with "What to do": code decides whether
   it is the better or worse side and picks the advice; the model words it with the user's
   own context (logs, long workouts).
@@ -206,7 +209,7 @@ for it, and that covariates did not help. The app is built to stay honest about 
   only the past 30 days; the app works with that, with less history to learn from.
 - The on-device language model is small. The guard catches numbers, sides, day words and
   diagnosis terms; it cannot catch a vague or loosely rounded sentence ("about a third of
-  the days"), which is why Ask shows the facts next to the wording. The model also tends to
+  the days"), which is why Ask shows its lookups next to the wording. The model also tends to
   append a general suggestion nobody asked for.
 - English only.
 

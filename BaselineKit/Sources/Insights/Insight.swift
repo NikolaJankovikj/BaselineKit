@@ -1,6 +1,5 @@
 import FoundationModels
 
-/// The explanation of one flagged event, as the app shows it.
 @Generable(description: "A calm, plain-language explanation of one flagged event in a person's wearable data")
 public struct AnomalyInsight: Codable, Sendable, Equatable {
     @Guide(description: "What happened, in one or two sentences, using only the given facts")
@@ -19,7 +18,6 @@ public struct AnomalyInsight: Codable, Sendable, Equatable {
     var allText: String { ([summary, suggestion] + likelyContributors).joined(separator: "\n") }
 }
 
-/// What one day's out-of-range value means and what to do about it.
 @Generable(description: "What one out-of-range reading in a person's wearable data means, and what to do about it")
 public struct MetricAdvice: Codable, Sendable, Equatable {
     @Guide(description: "One sentence on what the reading means, linking it to the known context if there is any")
@@ -35,7 +33,6 @@ public struct MetricAdvice: Codable, Sendable, Equatable {
     var allText: String { "\(summary)\n\(action)" }
 }
 
-/// The on-device weekly report.
 public struct WeeklyReport: Codable, Sendable, Equatable {
     public var headline: String
     public var highlights: [String]
@@ -52,7 +49,6 @@ public struct WeeklyReport: Codable, Sendable, Equatable {
     var allText: String { ([headline, focusForNextWeek] + highlights + concerns).joined(separator: "\n") }
 }
 
-/// Where a piece of text came from, so the app can say so.
 public enum InsightSource: String, Codable, Sendable {
     case appleIntelligence
     case template

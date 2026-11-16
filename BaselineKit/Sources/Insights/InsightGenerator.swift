@@ -1,20 +1,15 @@
 import FoundationModels
 import os
 
-/// Explains events and writes the weekly report, with Apple Intelligence when the device
-/// has it and from templates otherwise.
-///
 /// The model never computes anything: it gets facts worded by code, answers through guided
 /// generation, and the answer is shown only if `InsightGuard` accepts it.
 public struct InsightGenerator: Sendable {
     public init() {}
 
-    /// Whether the on-device model can be used right now, and if not, why.
     public static var availability: SystemLanguageModel.Availability {
         SystemLanguageModel.default.availability
     }
 
-    /// What holds for everything the model writes in this app.
     static let safetyRules = """
         You are not a clinician: never name a disease or condition, never diagnose, and never mention medication.
         Any suggestion must be a general wellness action: sleep, rest, recovery, hydration, lighter training, slow breathing or mindfulness.
@@ -55,7 +50,6 @@ public struct InsightGenerator: Sendable {
         return Sourced(report, source: .appleIntelligence)
     }
 
-    /// nil when the model is unavailable or declines; the caller falls back to the template.
     func generate<Content: Generable>(_ type: Content.Type, from prompt: String) async -> Content? {
         guard SystemLanguageModel.default.isAvailable else { return nil }
         do {

@@ -4,8 +4,6 @@ import HealthData
 import Insights
 import SwiftUI
 
-/// One metric over time, against the range Chronos-2 expected for each day and the range
-/// it expects for the coming week.
 struct MetricDetailView: View {
     /// One value per day makes a single-day view pointless, so the spans start at a week.
     enum Span: Int, CaseIterable, Identifiable {
@@ -35,7 +33,6 @@ struct MetricDetailView: View {
     private var assessment: MetricAssessment? { model.metrics[metric] }
     private var history: ArraySlice<DayAssessment> { (assessment?.days ?? []).suffix(span.rawValue) }
 
-    /// The day under the finger, or the latest day that has a value.
     private var focused: DayAssessment? {
         if let selection {
             let day = Calendar.current.startOfDay(for: selection)
@@ -178,7 +175,6 @@ struct MetricDetailView: View {
     }
 }
 
-/// What an out-of-range value means and what to do about it, right below the chart.
 private struct AdviceCard: View {
     var advice: Sourced<MetricAdvice>
 
@@ -195,7 +191,6 @@ private struct AdviceCard: View {
     }
 }
 
-/// The value, expected range and deviation of one day, above the chart.
 private struct FocusedDay: View {
     var metric: Metric
     var day: DayAssessment?

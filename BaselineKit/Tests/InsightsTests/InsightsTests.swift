@@ -6,8 +6,6 @@ import Testing
 @testable import Forecasting
 @testable import Insights
 
-// MARK: Facts and templates
-
 @Test func factsSayWhenAnEventHappened() {
     let now = snapshot()
     #expect(now.when(illness) == "over the last 2 nights")
@@ -57,8 +55,6 @@ import Testing
     }
 }
 
-// MARK: Guard
-
 @Test func guardRejectsNumbersThatAreNotInTheFacts() {
     let facts = "- resting heart rate: 64 bpm (expected 55–59)\n- respiratory rate: 16,2 br/min"
     #expect(InsightGuard.accepts("Your resting heart rate was 64, above 55 to 59. Breathing was at 16.2.", source: facts))
@@ -77,18 +73,14 @@ import Testing
 
 @Test func guardRejectsASignalOnTheWrongSideOfItsRange() {
     let facts = EventFacts(strain, in: snapshot()).prompt
-    // What the model once wrote about this event: both signals lumped on one side.
     #expect(InsightGuard.misplacedSignals(in: "Your heart rate variability and resting heart rate are below expectations.", source: facts) == ["resting heart rate"])
     #expect(InsightGuard.misplacedSignals(in: "Resting heart rate and heart rate variability were all elevated.", source: facts) == ["heart rate variability"])
     #expect(!InsightGuard.accepts("Your resting heart rate was low.", source: facts))
 
     #expect(InsightGuard.accepts("Your resting heart rate was above and your heart rate variability below your expected range.", source: facts))
     #expect(InsightGuard.accepts("Heart rate variability was lower than expected. Resting heart rate was higher.", source: facts))
-    // A direction without a signal, and a signal the facts say nothing about, are left alone.
     #expect(InsightGuard.accepts("Several signals were elevated. Sleep was low.", source: facts))
 }
-
-// MARK: Guided generation
 
 @Test func generableTypesRoundTripThroughGeneratedContent() throws {
     let insight = AnomalyInsight(summary: "s", likelyContributors: ["a", "b"], suggestion: "rest")
@@ -96,7 +88,6 @@ import Testing
     let wording = try WeekWording(GeneratedContent(properties: ["headline": "h", "focusForNextWeek": "f"]))
     #expect(try WeekWording(wording.generatedContent).headline == "h")
 
-    // Building a schema validates it.
     for schema in [AnomalyInsight.generationSchema, WeekWording.generationSchema, MetricAdvice.generationSchema] {
         #expect(!schema.debugDescription.isEmpty)
     }
@@ -110,7 +101,6 @@ func withoutAppleIntelligenceTheTemplateIsUsed() async {
     #expect(await InsightGenerator().weeklyReport(for: WeekFacts(snapshot())).source == .template)
 }
 
-/// Needs a device with Apple Intelligence turned on; skipped elsewhere.
 @Test(.enabled(if: SystemLanguageModel.default.isAvailable), arguments: [illness, strain, shortSleep, stress])
 func modelOutputParsesAndStaysWithinTheFacts(event: AnomalyEvent) async throws {
     let facts = EventFacts(event, in: snapshot())
@@ -122,8 +112,6 @@ func modelOutputParsesAndStaysWithinTheFacts(event: AnomalyEvent) async throws {
     #expect(InsightGuard.diagnosisTerms(in: insight.allText).isEmpty)
 }
 
-// MARK: Snapshot summaries and Ask
-
 let week = snapshot(
     metrics: [
         .sleepDuration: assessed(.sleepDuration, [7.5, 7.5, 7.5, 7.5, 7.5, 7.5, 7.5, 8, 8, 8, 8, 8, 8, 5], expected: Band(lower: 7, median: 7.75, upper: 8.5)),
@@ -134,9 +122,7 @@ let week = snapshot(
     workouts: [Workout(start: day(1), kind: "Run", minutes: 42.4, energy: 318), Workout(start: day(30), kind: "Ride", minutes: 60, energy: 500)])
 
 @Test func summariesAreShortAndFormattedByCode() {
-    // Above, below or within is said in words: the model is not asked to compare numbers.
     let lastNight = week.sleepSummary(for: testNow)
-    // The night is named as people name it, and each side of the range has its own line.
     let lines = lastNight.split(separator: "\n")
     #expect(lines.count == 3)
     #expect(lines[0].hasPrefix("Last night (") && lines[0].hasSuffix("): 1 of 2 overnight signals were outside their expected range."))
@@ -149,7 +135,6 @@ let week = snapshot(
     #expect(stats.hasPrefix("Resting heart rate over the last 7 days: average 56 bpm, lowest 56, highest 56."))
     #expect(stats.contains("Latest, today ("))
     #expect(stats.contains("56 bpm, within the expected 55–59. "))
-    // Zero counts are not mentioned: the model read "7 above and 0 below" as "none outside".
     #expect(stats.hasSuffix("All 6 days were within their expected range."))
     #expect(week.statsSummary(of: .sleepDuration, days: 7).hasSuffix("Of 7 days, 1 was below their expected range."))
     #expect(week.statsSummary(of: .restingHeartRate, days: 14).hasSuffix("Of 13 days, 7 were above their expected range."))
@@ -164,12 +149,9 @@ let week = snapshot(
     #expect(week.anomaliesSummary(days: 2) == "Nothing was flagged in the last 2 days.")
 }
 
-// MARK: Weekly report
-
 @Test func weeklyReportComesFromTheWeeksFacts() {
     let facts = WeekFacts(week)
 
-    // Better or worse is decided by code. Sleep moved by less than is worth a sentence.
     #expect(facts.improvements == ["Resting heart rate came down to 56 bpm, from 60 bpm the week before"])
     #expect(facts.setbacks.isEmpty)
     #expect(facts.withinRange == "12 of 13 overnight readings were within their expected range")
@@ -195,10 +177,8 @@ let week = snapshot(
     ], events: [stress, illness])
     let facts = WeekFacts(worse)
 
-    // Fewer steps is not a setback worth reporting; lower variability is.
     #expect(facts.improvements.isEmpty)
     #expect(facts.setbacks == ["Heart rate variability fell to 53 ms, from 62 ms the week before"])
-    // The event that suggests a clinician leads, though the stress episode is more recent.
     #expect(facts.flagged.map { $0.prefix(7) } == ["Several", "High in"])
     let report = TemplatedInsights.report(for: facts)
     // 53 ms is the lower edge of the range, so every night still counts as within it.
@@ -206,7 +186,6 @@ let week = snapshot(
     #expect(report.concerns == facts.flagged + facts.setbacks)
 }
 
-/// Needs a device with Apple Intelligence turned on; skipped elsewhere.
 @Test(.enabled(if: SystemLanguageModel.default.isAvailable))
 func theModelWordsTheWeekButTheListsStayFacts() async {
     let facts = WeekFacts(week)
@@ -222,13 +201,11 @@ func theModelWordsTheWeekButTheListsStayFacts() async {
 @Test func questionsAreRoutedToTheSummariesTheyAreAbout() {
     #expect(week.summaries(about: "How did I sleep last night?").first == week.sleepSummary(for: testNow))
     #expect(week.summaries(about: "How has my resting heart rate been this month?") == [week.statsSummary(of: .restingHeartRate, days: 30)])
-    // "heart rate variability" is not the resting heart rate.
     #expect(week.summaries(about: "Why is my heart rate variability low?") == [week.statsSummary(of: .heartRateVariability, days: 7)])
     #expect(week.summaries(about: "What did I train this week?") == [week.workoutsSummary(days: 7)])
     #expect(week.summaries(about: "Did the coffee matter?") == [week.logsSummary(days: 7)])
     #expect(week.summaries(about: "What was flagged?") == [week.anomaliesSummary(days: 7)])
     #expect(week.summaries(about: "Tell me a joke").isEmpty)
-    // Different questions, different answers, and none of them a summary of something else.
     #expect(AskSession.fallback(week.summaries(about: "How many steps?"), overview: week.overview) == week.statsSummary(of: .steps, days: 7))
     #expect(AskSession.fallback([], overview: week.overview).hasSuffix(AskSession.noTopic))
 }
@@ -248,7 +225,6 @@ func theModelWordsTheWeekButTheListsStayFacts() async {
     #expect(session.messages.last?.text == week.workoutsSummary(days: 7))
 }
 
-/// Needs a device with Apple Intelligence turned on; skipped elsewhere.
 @Test(.enabled(if: SystemLanguageModel.default.isAvailable), arguments: QuickQuestion.allCases) @MainActor
 func askAnswersEachQuestionWithinItsData(question: QuickQuestion) async throws {
     let session = AskSession(snapshot: week)
@@ -256,10 +232,78 @@ func askAnswersEachQuestionWithinItsData(question: QuickQuestion) async throws {
 
     let answer = try #require(session.messages.last)
     #expect(!answer.text.isEmpty)
-    #expect(InsightGuard.accepts(answer.text, source: answer.facts ?? answer.text))
+    #expect(InsightGuard.accepts(answer.text, source: answer.lookups.map(\.result).joined(separator: "\n")))
+    #expect(!answer.lookups.isEmpty)
 }
 
-// MARK: Advice on one day
+@Test func aShortHelloIsAGreetingWithoutTheModel() {
+    #expect(AskSession.isGreeting("Hi"))
+    #expect(AskSession.isGreeting("Good morning!"))
+    #expect(!AskSession.isGreeting("Hi, how did I sleep?"))
+    #expect(!AskSession.isGreeting(""))
+    #expect(AskSession.isGreeting("Thanks") && AskSession.isGreeting("ok great") && AskSession.isGreeting("Thank you so much!"))
+    #expect(week.summaries(about: "What should I do today?").contains(week.anomaliesSummary(days: 7)))
+}
+
+@MainActor final class Recorded { var lookups: [AskSession.Lookup] = [] }
+
+@Test @MainActor func theToolsReportEachCallAsItIsMade() async throws {
+    let recorded = Recorded()
+    let tools = AskSession.tools(for: week) { recorded.lookups.append($0) }
+    let metric = try #require(tools.first { $0.name == "metric" } as? DataTool<MetricArguments>)
+    let result = try await metric.call(arguments: MetricArguments(metric: "restingHeartRate", days: 30))
+    #expect(result == week.statsSummary(of: .restingHeartRate, days: 30))
+    #expect(recorded.lookups == [AskSession.Lookup(title: "Resting heart rate, last 30 days", result: result)])
+}
+
+/// Needs a device with Apple Intelligence turned on; skipped elsewhere.
+@Test(.enabled(if: SystemLanguageModel.default.isAvailable)) @MainActor
+func thanksAfterAnAnswerGetsAReplyNotTheAnswerAgain() async throws {
+    let session = AskSession(snapshot: week)
+    await session.ask("How did I sleep last night?")
+    await session.ask("Thanks")
+    let reply = try #require(session.messages.last)
+    #expect(reply.lookups.isEmpty)
+    #expect(!reply.text.isEmpty && reply.text != session.messages[1].text)
+}
+
+/// Needs a device with Apple Intelligence turned on; skipped elsewhere.
+@Test(.enabled(if: SystemLanguageModel.default.isAvailable), arguments: ["Thanks", "thanks!", "ok great"])
+func thanksAfterAnAnswerIsNotAnotherQuestion(message: String) async {
+    let previous = (question: "How did I sleep last night?", answer: "You slept less than usual last night.")
+    #expect(await AskSession.triage(message, previous: previous) == .greeting)
+    // A real follow-up still is.
+    #expect(await AskSession.triage("What should I do about it?", previous: previous) == .data)
+}
+
+@Test(.enabled(if: SystemLanguageModel.default.isAvailable), arguments: ["Hi", "Hello there", "Thanks!"]) @MainActor
+func greetingsAreGreeted(message: String) async {
+    #expect(await AskSession.triage(message, previous: nil) == .greeting)
+    let session = AskSession(snapshot: week)
+    await session.ask(message)
+    #expect(session.messages.last?.text.isEmpty == false)
+    #expect(session.messages.last?.lookups.isEmpty == true)
+}
+
+@Test(.enabled(if: SystemLanguageModel.default.isAvailable),
+      arguments: [("What is the capital of France?", "paris"), ("What is 17 times 3?", "51"), ("Help me fix my Python code", "def ")]) @MainActor
+func offTopicQuestionsAreTurnedDown(question: String, answer: String) async throws {
+    #expect(await AskSession.triage(question, previous: nil) == .offTopic)
+    let session = AskSession(snapshot: week)
+    await session.ask(question)
+    let reply = try #require(session.messages.last)
+    #expect(!reply.text.isEmpty && !reply.text.lowercased().contains(answer))
+    #expect(reply.lookups.isEmpty)
+}
+
+@Test(.enabled(if: SystemLanguageModel.default.isAvailable)) @MainActor
+func whatToDoTodayFollowsFromTheData() async throws {
+    let session = AskSession(snapshot: week)
+    await session.ask("What should I do today?")
+    let answer = try #require(session.messages.last)
+    #expect(answer.lookups.contains { $0.result.hasPrefix("Last night (") })
+    #expect(!answer.text.localizedCaseInsensitiveContains("breath"))
+}
 
 let highHeartRate = assessed(.restingHeartRate, [57, 64], expected: Band(lower: 55, median: 57, upper: 59))
 
@@ -273,16 +317,13 @@ let highHeartRate = assessed(.restingHeartRate, [57, 64], expected: Band(lower: 
     #expect(advice.summary.contains("worse than usual") && advice.summary.contains("Alcohol logged yesterday"))
     #expect(InsightGuard.accepts(advice.allText, source: worse.prompt))
 
-    // In range there is nothing to say; for variability, higher is the better side.
     #expect(DayFacts(.restingHeartRate, highHeartRate.days[0], in: context) == nil)
     let hrv = assessed(.heartRateVariability, [80], expected: Band(lower: 50, median: 60, upper: 70))
     #expect(try #require(DayFacts(.heartRateVariability, hrv.days[0], in: snapshot())).isBetter)
-    // Fewer steps than expected is the worse side, though steps never signal strain.
     let steps = assessed(.steps, [2000], expected: Band(lower: 6000, median: 9000, upper: 12000))
     #expect(try #require(DayFacts(.steps, steps.days[0], in: snapshot())).isBetter == false)
 }
 
-/// Needs a device with Apple Intelligence turned on; skipped elsewhere.
 @Test(.enabled(if: SystemLanguageModel.default.isAvailable))
 func theModelsAdviceStaysWithinTheFacts() async throws {
     let facts = try #require(DayFacts(.restingHeartRate, highHeartRate.days[1], in: snapshot()))

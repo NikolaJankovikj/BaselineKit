@@ -2,16 +2,12 @@ import Forecasting
 import Foundation
 import HealthData
 
-/// Everything the explanations and the Ask tools may draw on, frozen at one moment.
-/// It also turns that data into the short, pre-summarised text the small on-device model
-/// gets: all numbers are formatted here, by code.
 public struct HealthSnapshot: Sendable {
     public var metrics: [Metric: MetricAssessment]
     public var events: [AnomalyEvent]
     public var logs: [ManualLog]
     public var workouts: [Workout]
     public var calendar: Calendar
-    /// The midnight that starts today.
     public var today: Date
 
     public init(
@@ -26,14 +22,10 @@ public struct HealthSnapshot: Sendable {
         today = calendar.startOfDay(for: now)
     }
 
-    // MARK: Dates
-
-    /// "Tue 10 Nov"
     func dayLabel(_ date: Date) -> String {
         date.formatted(Date.FormatStyle(calendar: calendar, timeZone: calendar.timeZone).weekday(.abbreviated).day().month(.abbreviated))
     }
 
-    /// "14:00"
     func timeLabel(_ date: Date) -> String {
         date.formatted(Date.FormatStyle(calendar: calendar, timeZone: calendar.timeZone).hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
     }
@@ -68,7 +60,6 @@ public struct HealthSnapshot: Sendable {
         (calendar.dateComponents([.day], from: event.start, to: event.end).day ?? 0) + 1
     }
 
-    /// When an event happened, as words that can end a sentence: "over the last 4 nights".
     public func when(_ event: AnomalyEvent) -> String {
         if event.kind == .intradayStress {
             let day = calendar.isDate(event.start, inSameDayAs: today) ? "today" : "on \(dayLabel(event.start))"
@@ -81,10 +72,6 @@ public struct HealthSnapshot: Sendable {
         return nights == 1 ? "on the night to \(dayLabel(event.end))" : "over the \(nights) nights to \(dayLabel(event.end))"
     }
 
-    // MARK: Summaries (what Ask answers from)
-
-    /// One night's sleep and overnight vitals against their expected ranges, for the night
-    /// that ended on `date`.
     public func sleepSummary(for date: Date) -> String {
         let day = calendar.startOfDay(for: date)
         let nights = Metric.allCases.filter(\.isOvernight).compactMap { metric in
@@ -104,8 +91,6 @@ public struct HealthSnapshot: Sendable {
             .joined(separator: "\n")
     }
 
-    /// "63 bpm, above the expected 55–59". The comparison is made here, in code, so the
-    /// language model reads it and never has to compare numbers itself.
     private func reading(_ day: DayAssessment, of metric: Metric) -> String {
         guard let observed = day.observed else { return "no value" }
         guard let expected = day.expected else { return metric.formattedWithUnit(observed) }
@@ -160,7 +145,6 @@ public struct HealthSnapshot: Sendable {
 }
 
 extension Band {
-    /// "63 bpm, above the expected 55–59"
     func comparison(of value: Double, unit: String, format: (Double) -> String) -> String {
         "\(format(value)) \(unit), \(side(of: value)) the expected \(format(lower))–\(format(upper))"
     }
@@ -171,7 +155,6 @@ extension Band {
 }
 
 extension DayAssessment {
-    /// "above", "below" or "within" the expected range; nil without a value or a range.
     var side: String? {
         guard let observed, let expected else { return nil }
         return expected.side(of: observed)
@@ -184,13 +167,11 @@ extension DayAssessment {
 }
 
 extension AnomalyEvent.Signal {
-    /// "64 bpm, above the expected 55–59"
     var comparison: String {
         expected.comparison(of: observed, unit: metric?.unit ?? "bpm", format: formatted)
     }
 }
 
-/// Questions the Ask screen offers as buttons.
 public enum QuickQuestion: String, CaseIterable, Identifiable, Sendable {
     case lastNight = "How did I sleep last night?"
     case today = "What should I do today?"
@@ -201,14 +182,11 @@ public enum QuickQuestion: String, CaseIterable, Identifiable, Sendable {
 }
 
 extension HealthSnapshot {
-    /// The last week at a glance: what Ask gives the model with every question.
     public var overview: [String] {
         [sleepSummary(for: today), anomaliesSummary(days: 7), logsSummary(days: 7), workoutsSummary(days: 7)]
             + Metric.allCases.filter { metrics[$0] != nil }.map { statsSummary(of: $0, days: 7) }
     }
 
-    /// The summaries a question is about, picked by its words; empty when none fits.
-    ///
     /// ponytail: keyword routing, a classifier if questions outgrow the word lists.
     public func summaries(about question: String) -> [String] {
         let words = question.lowercased().split { !$0.isLetter && !$0.isNumber }.map(String.init)
@@ -217,7 +195,8 @@ extension HealthSnapshot {
         let days = mentions("year", "quarter") ? 90 : mentions("month", "weeks") ? 30 : 7
 
         var found: [String] = []
-        if mentions("sleep", "slept", "night", "bed", "tired") {
+        let asksForAdvice = mentions("should", "plan", "advice", "advise", "recommend", "doing")
+        if asksForAdvice || mentions("sleep", "slept", "night", "bed", "tired") {
             found += [sleepSummary(for: today), statsSummary(of: .sleepDuration, days: days)]
         }
         let isVariability = mentions("hrv", "variability")
@@ -237,7 +216,7 @@ extension HealthSnapshot {
         if mentions("log", "alcohol", "drink", "beer", "wine", "caffeine", "coffee", "sick", "ill", "travel") {
             found.append(logsSummary(days: days))
         }
-        if mentions("flag", "unusual", "warn", "wrong", "alert", "anomal", "worry", "concern", "stress", "ok", "okay", "fine", "normal") {
+        if asksForAdvice || mentions("flag", "unusual", "warn", "wrong", "alert", "anomal", "worry", "concern", "stress", "ok", "okay", "fine", "normal") {
             found.append(anomaliesSummary(days: days))
         }
         return found

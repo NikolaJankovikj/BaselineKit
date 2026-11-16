@@ -6,7 +6,6 @@ import Testing
 
 @Test func standardizedResidualIsInSigmaUnitsOfTheBandWidth() {
     let band = Band(lower: 8, median: 10, upper: 12)
-    // σ̂ = (q90 − q10) / 2.5631, as in the thesis scorer.
     #expect(abs(band.sigma - 4 / 2.5631) < 1e-12)
     #expect(abs(band.standardizedResidual(of: 13) - 3 / band.sigma) < 1e-12)
     #expect(band.contains(12) && !band.contains(12.01))
@@ -25,8 +24,6 @@ import Testing
     #expect(SimpleAverage.band(history: old)?.median == 5)
 }
 
-/// A forecaster that expects tomorrow to be like its last value: the adapting kind that
-/// `Anchoring` is there to hold still.
 private func adaptive(_ observed: [Double]) -> (Int, Int) -> Band? {
     { origin, _ in unitBand(around: observed[origin]) }
 }
@@ -36,7 +33,6 @@ private func adaptive(_ observed: [Double]) -> (Int, Int) -> Band? {
     let selection = Anchoring.select(observed: observed, steps: 1...6, maxFrozenSteps: 7, threshold: 2, forecast: adaptive(observed))
 
     #expect(selection.horizons == [1, 1, 1, 2, 3, 4])
-    // The forecaster never gets to call 20 normal.
     #expect(selection.bands.map { $0?.median } == Array(repeating: 10, count: 6))
     #expect(selection.anchor == 6)
 }

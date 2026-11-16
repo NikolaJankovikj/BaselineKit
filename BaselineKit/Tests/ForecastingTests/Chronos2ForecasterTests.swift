@@ -3,8 +3,6 @@ import Testing
 
 @testable import Forecasting
 
-/// What `chronos-health/scripts/06_export_coreml.py` wrote: tasks and the answers of the
-/// stock PyTorch pipeline.
 struct GoldenFixtures: Decodable {
     struct Task: Decodable {
         struct Known: Decodable {
@@ -16,7 +14,6 @@ struct GoldenFixtures: Decodable {
         var target: [[Double?]]
         var past: [[Double?]]?
         var known: [Known]?
-        /// target × quantile level × step
         var quantiles: [[[Double]]]
 
         var forecastTask: ForecastTask {

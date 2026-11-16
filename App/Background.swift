@@ -4,7 +4,6 @@ import Foundation
 import HealthData
 import UserNotifications
 
-/// Which notifications the user turned on. The raw value is the settings key.
 enum NotificationPreference: String {
     case anomalies = "notify.anomalies"
     case morningReadiness = "notify.readiness"
@@ -13,7 +12,6 @@ enum NotificationPreference: String {
     var isOn: Bool { UserDefaults.standard.bool(forKey: rawValue) }
 }
 
-/// Local notifications about what a refresh found. Each thing is announced once.
 enum Notifier {
     static func requestPermission() async {
         _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
@@ -38,13 +36,11 @@ enum Notifier {
     }
 
     #if DEBUG
-        /// Debug aid: lets what was already announced today be announced again.
         static func forget() {
             ["announced.event", "announced.readiness", "announced.report"].forEach(UserDefaults.standard.removeObject)
         }
     #endif
 
-    /// Posts unless `state` is what was last posted under `key`.
     private static func post(title: String, body: String, once key: String, _ state: String) async {
         guard UserDefaults.standard.string(forKey: key) != state else { return }
         let content = UNMutableNotificationContent()
@@ -55,8 +51,6 @@ enum Notifier {
     }
 }
 
-/// Keeps the app current without being opened: a nightly task while charging, and a wake-up
-/// whenever Apple Health gets new overnight data.
 enum BaselineBackground {
     static let nightlyTask = "app.baseline.nightly"
 
@@ -93,7 +87,6 @@ enum BaselineBackground {
         task.expirationHandler = { work.cancel() }
     }
 
-    /// Asks for a run in the small hours, while the phone charges.
     private static func scheduleNightly() {
         let request = BGProcessingTaskRequest(identifier: nightlyTask)
         request.requiresExternalPower = true

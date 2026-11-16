@@ -2,11 +2,8 @@ import CoreML
 import Foundation
 import os
 
-/// One forecasting problem: targets that are forecast jointly, and what else the model may look at.
-/// Histories are oldest first, with `.nan` for a missing value.
 public struct ForecastTask: Sendable {
     public var targets: [[Double]]
-    /// Related series whose future is unknown.
     public var pastCovariates: [[Double]]
     public var knownCovariates: [KnownCovariate]
 
@@ -19,10 +16,8 @@ public struct ForecastTask: Sendable {
     var rowCount: Int { targets.count + pastCovariates.count + knownCovariates.count }
 }
 
-/// A covariate whose values over the forecast horizon are known, such as the day of the week.
 public struct KnownCovariate: Sendable {
     public var past: [Double]
-    /// Up to one value per forecast step; `.nan` or a shorter array leaves a step unknown.
     public var future: [Double]
 
     public init(past: [Double], future: [Double]) {
@@ -37,14 +32,9 @@ public enum ForecastError: Error {
     case taskTooLarge(rows: Int, limit: Int)
 }
 
-/// Chronos-2-small running on Core ML, entirely on the device.
-///
-/// The model takes a fixed batch of rows, so tasks are packed into as few calls as fit.
-/// `chronos-health/scripts/06_export_coreml.py` produces the model and documents its inputs.
 public actor Chronos2Forecaster {
     public static let shared = Chronos2Forecaster()
 
-    /// Seconds of model time and number of model calls since launch, for the diagnostics screen.
     public private(set) var usage = (seconds: 0.0, calls: 0)
 
     private lazy var loading = Task { try await LoadedModel.load() }
@@ -52,13 +42,10 @@ public actor Chronos2Forecaster {
 
     public init() {}
 
-    /// Loads the model ahead of the first forecast.
     public func prepare() async throws {
         _ = try await loading.value
     }
 
-    /// Forecasts every task. The result has one array per task, holding one expected range
-    /// per forecast step for each of the task's targets.
     public func forecast(_ tasks: [ForecastTask]) async throws -> [[[Band]]] {
         let loaded = try await loading.value
         var results = tasks.map { _ in [[Band]]() }
@@ -81,7 +68,6 @@ public actor Chronos2Forecaster {
     }
 }
 
-/// The fixed input shape of the exported graph.
 struct ModelLayout: Equatable {
     var rows: Int
     var context: Int
@@ -94,7 +80,6 @@ struct Batch {
     var context: [Float]
     var knownFuture: [Float]
     var groups: [Int32]
-    /// For each task in this batch, the rows that hold its targets.
     var targets: [(task: Int, rows: Range<Int>)] = []
     private var usedRows = 0
     private let layout: ModelLayout
@@ -107,7 +92,6 @@ struct Batch {
         groups = (0..<Int32(layout.rows)).map { $0 }
     }
 
-    /// Packs tasks in order, starting a new batch when the next task does not fit.
     static func pack(_ tasks: [ForecastTask], layout: ModelLayout) throws -> [Batch] {
         var batches: [Batch] = []
         var current = Batch(layout: layout)
@@ -138,7 +122,6 @@ struct Batch {
         }
     }
 
-    /// Writes values and their observed flags into one row of a `rows × 2 × length` buffer.
     private static func write(_ values: some Collection<Double>, into buffer: inout [Float], row: Int, offset: Int, length: Int) {
         let valueStart = row * 2 * length + offset
         for (index, value) in values.enumerated() where value.isFinite {
@@ -148,11 +131,9 @@ struct Batch {
     }
 }
 
-/// The compiled Core ML model and what its metadata says about its layout.
 private struct LoadedModel: @unchecked Sendable {  // MLModel predicts safely from any thread; it predates Sendable.
     let model: MLModel
     let layout: ModelLayout
-    /// Positions of q10, q50 and q90 among the model's quantile levels.
     let levels: (lower: Int, median: Int, upper: Int)
     let levelCount: Int
 
@@ -202,7 +183,6 @@ private struct LoadedModel: @unchecked Sendable {  // MLModel predicts safely fr
         return cached
     }
 
-    /// Runs the model on one batch: `rows × levels × horizon` values, row-major.
     func quantiles(for batch: Batch) throws -> [Float] {
         let inputs = try MLDictionaryFeatureProvider(dictionary: [
             "context": MLMultiArray(MLShapedArray(scalars: batch.context, shape: [layout.rows, 2, layout.context])),

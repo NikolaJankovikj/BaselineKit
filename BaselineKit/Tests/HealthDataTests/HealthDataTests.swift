@@ -19,7 +19,6 @@ private let now = date(13, 17)
 @Test func aNightBelongsToTheDayOfWakingUp() {
     #expect(SleepDay.day(containing: date(9, 23, 30), calendar: calendar) == date(10, 0))
     #expect(SleepDay.day(containing: date(10, 3), calendar: calendar) == date(10, 0))
-    // The sleep day turns over at 18:00.
     #expect(SleepDay.day(containing: date(9, 17, 59), calendar: calendar) == date(9, 0))
     #expect(SleepDay.day(containing: date(9, 18), calendar: calendar) == date(10, 0))
 }
@@ -81,6 +80,5 @@ private let now = date(13, 17)
     for bin in intraday.isMasked.indices where calendar.component(.hour, from: intraday.time(ofBin: bin)) < 7 {
         #expect(intraday.isMasked[bin] && intraday.steps[bin] == 0)
     }
-    // Heart rate is sampled sparsely, as on a watch.
     #expect(intraday.heartRate.contains { $0.isNaN } && intraday.heartRate.contains { $0.isFinite })
 }

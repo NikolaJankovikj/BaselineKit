@@ -85,7 +85,6 @@ struct LoadingView: View {
     }
 }
 
-/// First launch: what the app does, what it reads and why, and where the data stays.
 struct OnboardingView: View {
     @Environment(AppModel.self) private var model
 

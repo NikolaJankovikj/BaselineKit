@@ -18,13 +18,10 @@ enum TestClock {
     }
 }
 
-/// A band whose σ̂ is exactly 1 around `median`.
 func unitBand(around median: Double = 10) -> Band {
     Band(lower: median - Band.widthPerSigma / 2, median: median, upper: median + Band.widthPerSigma / 2)
 }
 
-/// Days whose values sit `concerns[i]` σ toward the metric's concerning side of a unit band;
-/// nil is a day without data.
 func assessment(_ metric: Metric, concerns: [Double?]) -> MetricAssessment {
     let days = TestClock.calendar.days(count: concerns.count, endingAt: TestClock.now)
     let sign = metric.concerningDirection?.sign ?? 1

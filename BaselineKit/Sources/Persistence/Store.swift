@@ -4,7 +4,6 @@ import HealthData
 import Insights
 import Observation
 
-/// What the user said about a flagged event. Kept so it can later label or explain events.
 public struct Feedback: Codable, Sendable, Equatable {
     public enum Verdict: String, Codable, Sendable {
         case makesSense, falseAlarm
@@ -19,14 +18,11 @@ public struct Feedback: Codable, Sendable, Equatable {
     }
 }
 
-/// Everything the app keeps on disk: the user's journal and the forecast cache.
-///
 /// Two small JSON files in the app's own container, written atomically and encrypted by the
 /// system until the first unlock after a restart (background refreshes run while locked).
 /// Nothing is synced or sent anywhere.
 @MainActor @Observable
 public final class Store {
-    /// What only the user can provide; losing it would lose their input.
     private struct Journal: Codable {
         var logs: [ManualLog] = []
         var feedback: [String: Feedback] = [:]
@@ -35,25 +31,19 @@ public final class Store {
     }
 
     private var journal = Journal()
-    /// Derived data; it can be deleted and is rebuilt.
     public private(set) var forecasts: ForecastCache = [:]
 
     private let directory: URL?
 
-    /// - Parameter directory: where the files live; nil keeps everything in memory, for the
-    ///   demo and for tests.
     public init(directory: URL?) {
         self.directory = directory
         journal = read("journal.json") ?? Journal()
         forecasts = read("forecasts.json") ?? [:]
     }
 
-    /// The store for the user's real data.
     public static func onDisk() -> Store {
         Store(directory: URL.applicationSupportDirectory.appending(path: "Baseline"))
     }
-
-    // MARK: Journal
 
     public var logs: [ManualLog] { journal.logs }
 
@@ -98,22 +88,17 @@ public final class Store {
     private static func key(_ event: AnomalyEvent) -> String { "\(event.id)|\(key(event.end))" }
     private static func key(_ date: Date) -> String { String(Int(date.timeIntervalSinceReferenceDate)) }
 
-    // MARK: Forecast cache
-
     public func addForecasts(_ fresh: ForecastCache) {
         guard !fresh.isEmpty else { return }
         forecasts.merge(fresh) { _, new in new }
         write(forecasts, to: "forecasts.json")
     }
 
-    /// Deletes everything the app stored.
     public func eraseAll() {
         journal = Journal()
         forecasts = [:]
         if let directory { try? FileManager.default.removeItem(at: directory) }
     }
-
-    // MARK: Files
 
     private func saveJournal() {
         write(journal, to: "journal.json")
@@ -137,7 +122,6 @@ public final class Store {
     }
 }
 
-/// The user's daily values with their expected ranges, as CSV for their own use.
 public func dailyCSV(_ metrics: [Metric: MetricAssessment]) -> String {
     let columns = Metric.allCases.filter { metrics[$0] != nil }
     let header = ["date"] + columns.flatMap { ["\($0.rawValue)", "\($0.rawValue)_expected_low", "\($0.rawValue)_expected_high"] }

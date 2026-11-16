@@ -1,7 +1,6 @@
 import Insights
 import SwiftUI
 
-/// The weekly report and the way into Ask.
 struct InsightsView: View {
     @Environment(AppModel.self) private var model
 
@@ -72,8 +71,6 @@ private struct WeeklyReportCard: View {
     }
 }
 
-/// A chat restricted to the user's own data. Without Apple Intelligence it still answers,
-/// with the summaries the question is about.
 struct AskView: View {
     @State var session: AskSession
     @State private var draft = ""
@@ -109,6 +106,7 @@ struct AskView: View {
         .background(Color.page)
         .safeAreaInset(edge: .bottom) { composer }
         .navigationTitle("Ask")
+        .onAppear { session.prewarm() }
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -148,13 +146,24 @@ private struct MessageBubble: View {
             if isUser { Spacer(minLength: 40) }
             VStack(alignment: .leading, spacing: 8) {
                 if message.text.isEmpty {
-                    ProgressView().controlSize(.small)
+                    WorkingOn(message: message)
                 } else {
-                    Text(message.text)
+                    // The answer streams in; **bold** may arrive before its closing marks, and shows as typed until then.
+                    Text((try? AttributedString(markdown: message.text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+                        ?? AttributedString(message.text))
                 }
-                if let facts = message.facts {
-                    DisclosureGroup("From your data") {
-                        Text(facts).frame(maxWidth: .infinity, alignment: .leading)
+                if !message.text.isEmpty, !message.lookups.isEmpty {
+                    DisclosureGroup("From your data · \(message.lookups.count) \(message.lookups.count == 1 ? "lookup" : "lookups")") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(message.lookups) { lookup in
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(lookup.title).fontWeight(.semibold)
+                                    Text(lookup.result)
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 4)
                     }
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -166,6 +175,30 @@ private struct MessageBubble: View {
             .foregroundStyle(isUser ? .white : .primary)
             if !isUser { Spacer(minLength: 40) }
         }
+    }
+}
+
+/// What the agents are doing, and each lookup as the research agent makes it.
+private struct WorkingOn: View {
+    var message: AskSession.Message
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                if let activity = message.activity {
+                    Text(activity + "…").foregroundStyle(.secondary)
+                }
+            }
+            ForEach(message.lookups) { lookup in
+                Label(lookup.title, systemImage: "magnifyingglass")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .animation(.default, value: message.lookups.count)
+        .animation(.default, value: message.activity)
     }
 }
 

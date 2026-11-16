@@ -1,9 +1,7 @@
 import Foundation
 import HealthData
 
-/// How much history the expected ranges have to go on.
 public enum BaselineState: Sendable, Equatable {
-    /// Ranges are shown but provisional, and nothing is flagged yet.
     case learning(nights: Int)
     case established
 
@@ -16,23 +14,18 @@ public enum BaselineState: Sendable, Equatable {
     public var isEstablished: Bool { self == .established }
 }
 
-/// A 0–100 summary of how last night's signals sit relative to their expected ranges.
-/// A heuristic for orientation, not a clinical score.
 public struct Readiness: Sendable, Equatable {
     public struct Contribution: Sendable, Equatable, Identifiable {
         public var metric: Metric
         public var observed: Double
         public var expected: Band
-        /// σ toward the metric's concerning side; negative is better than expected.
         public var concern: Double
-        /// This signal's own 0–100 score.
         public var score: Double
 
         public var id: Metric { metric }
     }
 
     public var score: Int
-    /// Most concerning first.
     public var contributions: [Contribution]
 
     /// Heart rate and its variability respond to most kinds of strain, so they weigh most.
@@ -41,8 +34,6 @@ public struct Readiness: Sendable, Equatable {
         .respiratoryRate: 0.1, .wristTemperature: 0.1,
     ]
 
-    /// The weighted mean of the signal scores, over the signals last night left.
-    /// nil when it left none that has an expected range.
     public init?(_ metrics: [Metric: MetricAssessment]) {
         var contributions: [Contribution] = []
         var weighted = 0.0

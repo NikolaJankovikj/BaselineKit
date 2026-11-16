@@ -3,8 +3,6 @@ import HealthData
 import Testing
 @testable import Baseline
 
-/// Apple Health that never gets its access sheet answered: the request hangs until the
-/// test lets it fail, the way the real one fails with a timeout after a minute.
 private struct UnansweredHealth: HealthDataProvider {
     struct TimedOut: LocalizedError {
         var errorDescription: String? { "Authorization session timed out" }
@@ -32,14 +30,11 @@ private func modelWithUnansweredHealth() -> (model: AppModel, asked: AsyncStream
     let defaults = UserDefaults(suiteName: "AppModelTests")!
     defaults.removePersistentDomain(forName: "AppModelTests")
     let model = AppModel(defaults: defaults)
-    // The few days of the first-days scenario keep the demo's own load short.
     model.scenario = .coldStart
     model.healthProvider = { UnansweredHealth(asked: askedContinuation, timeout: timeout) }
     return (model, asked, { timeoutContinuation.finish() })
 }
 
-/// What a tester did: connect Apple Health, see nothing happen, go on with the demo. A
-/// minute later the Health request failed and took the app over, with no way back.
 @Test @MainActor func aHealthRequestThatFailsLateLeavesTheDemoAlone() async {
     let (model, asked, timeOut) = modelWithUnansweredHealth()
 
@@ -66,7 +61,6 @@ private func modelWithUnansweredHealth() -> (model: AppModel, asked: AsyncStream
     await model.refresh()
     #expect(model.phase == .failed("Authorization session timed out"))
 
-    // The failure screen's second button.
     model.choose(.demo)
     #expect(model.phase == .loading)
     await model.refresh()

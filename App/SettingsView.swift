@@ -154,8 +154,6 @@ struct SettingsView: View {
     }
 }
 
-/// The thesis's comparison on the user's own history: does Chronos-2 forecast better than
-/// a simple average, and are its ranges calibrated?
 struct EvaluationView: View {
     @Environment(AppModel.self) private var model
     @State private var scores: [ForecastMode: [BacktestScore]] = [:]

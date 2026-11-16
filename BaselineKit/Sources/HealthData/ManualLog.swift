@@ -1,6 +1,5 @@
 import Foundation
 
-/// Something the user reports that can explain a deviation. Also the vocabulary for feedback tags.
 public struct ManualLog: Codable, Sendable, Identifiable, Hashable {
     public enum Kind: String, Codable, CaseIterable, Sendable, Identifiable {
         case alcohol, caffeine, illness, stress, hardTraining, travel

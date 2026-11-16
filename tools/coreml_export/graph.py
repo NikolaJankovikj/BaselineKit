@@ -56,7 +56,6 @@ class Chronos2Export(nn.Module):
             hidden = hidden + self._attend(
                 time.self_attention, time.layer_norm(hidden), time_mask, self._rotate
             )
-            # Group attention runs across rows at each time step.
             across = hidden.transpose(0, 1)
             across = across + self._attend(
                 group.self_attention, group.layer_norm(across), group_mask, _unrotated

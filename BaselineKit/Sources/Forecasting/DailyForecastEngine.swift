@@ -2,15 +2,12 @@ import Foundation
 import HealthData
 
 public enum ForecastMode: String, Codable, Sendable, CaseIterable, Identifiable {
-    /// Each metric is forecast from its own history.
     case univariate
-    /// All metrics are forecast as one group, with the weekend and logged events as covariates.
     case joint
 
     public var id: Self { self }
 }
 
-/// The expected ranges for the days after one origin day; `steps[0]` is the day after it.
 public struct OriginForecast: Sendable, Codable, Equatable {
     public var steps: [Band]
 }
@@ -21,19 +18,13 @@ public typealias ForecastCache = [String: OriginForecast]
 
 public struct DayAssessment: Sendable, Equatable, Identifiable {
     public var day: Date
-    /// nil when nothing was recorded, and for a total that is still running.
     public var observed: Double?
-    /// Chronos-2's expected range.
     public var expected: Band?
-    /// The simple-average range, for comparison.
     public var simple: Band?
-    /// Days between the forecast behind `expected` and this day; above 1 while a run of
-    /// deviations keeps the range frozen.
     public var horizon: Int
 
     public var id: Date { day }
 
-    /// (observed − expected median) / σ̂; positive is above expected.
     public var residual: Double? {
         guard let observed, let expected else { return nil }
         return expected.standardizedResidual(of: observed)
@@ -42,30 +33,20 @@ public struct DayAssessment: Sendable, Equatable, Identifiable {
 
 public struct MetricAssessment: Sendable, Equatable {
     public var metric: Metric
-    /// Oldest first; the last one is today.
     public var days: [DayAssessment]
-    /// The coming days, with expected ranges only.
     public var outlook: [DayAssessment]
-    /// Today's total so far, for metrics that add up over the day.
     public var runningTotal: Double?
 
-    /// How far a day sits toward the metric's concerning side, in σ; nil when there is no
-    /// such side or the day cannot be judged.
     public func concern(_ day: DayAssessment) -> Double? {
         guard let direction = metric.concerningDirection, let residual = day.residual else { return nil }
         return direction.sign * residual
     }
 }
 
-/// Turns a daily history into expected ranges per metric: a rolling backtest over the
-/// recent past and an outlook, from Chronos-2 and from the simple average.
 public struct DailyForecastEngine: Sendable {
     public static let outlookDays = 7
-    /// Nights an expected range stays frozen while values keep deviating (see `Anchoring`).
     public static let maxFrozenDays = 7
-    /// |standardized residual| from which a value counts as a deviation.
     public static let deviationThreshold = 2.0
-    /// Observed values a history needs before a range is shown for it.
     public static let minimumObservations = 3
     private static let stepsKept = outlookDays + maxFrozenDays
 
@@ -81,11 +62,9 @@ public struct DailyForecastEngine: Sendable {
 
     public struct Result: Sendable {
         public var metrics: [Metric: MetricAssessment] = [:]
-        /// Forecasts made in this run that stay valid; add them to the cache.
         public var newForecasts: ForecastCache = [:]
     }
 
-    /// Assesses the last `depth` days and the coming week, reusing forecasts from `cache`.
     public func assess(_ history: DailyHistory, logs: [ManualLog] = [], depth: Int, cache: ForecastCache = [:]) async throws -> Result {
         guard let today = history.days.indices.last else { return Result() }
         let series = modelSeries(history)
@@ -123,8 +102,6 @@ public struct DailyForecastEngine: Sendable {
         })
     }
 
-    // MARK: Forecasting
-
     private func missingForecasts(
         for origins: ClosedRange<Int>, series: [Metric: [Double]], history: DailyHistory, logs: [ManualLog], cache: ForecastCache
     ) async throws -> ForecastCache {
@@ -160,7 +137,6 @@ public struct DailyForecastEngine: Sendable {
         return fresh
     }
 
-    /// 1 on Saturdays and Sundays; known for the future because the calendar is.
     private func weekendCovariate(days: ArraySlice<Date>) -> KnownCovariate {
         func flag(_ day: Date) -> Double { calendar.isDateInWeekend(day) ? 1 : 0 }
         let future = days.last.map { last in
@@ -178,8 +154,6 @@ public struct DailyForecastEngine: Sendable {
             return flags.contains(1) ? flags : nil
         }
     }
-
-    // MARK: Assessment
 
     private func assess(_ metric: Metric, series: [Double], days: [Date], range: ClosedRange<Int>, forecasts: ForecastCache) -> MetricAssessment {
         func model(_ origin: Int, _ ahead: Int) -> Band? {
@@ -213,17 +187,11 @@ public struct DailyForecastEngine: Sendable {
     }
 }
 
-// MARK: - Backtest
-
-/// How well one-day-ahead forecasts did on a metric's own history.
 public struct BacktestScore: Sendable, Identifiable, Equatable {
     public var metric: Metric
-    /// Days that had both a forecast and a value.
     public var days: Int
-    /// Mean absolute error of the median forecast, in the metric's unit.
     public var modelError: Double
     public var simpleError: Double
-    /// Share of values inside q10–q90. A calibrated forecaster gets 0.8.
     public var modelCoverage: Double
     public var simpleCoverage: Double
 

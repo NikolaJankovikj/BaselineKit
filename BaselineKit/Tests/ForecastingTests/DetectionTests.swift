@@ -21,7 +21,6 @@ private func events(_ concerns: [Metric: [Double?]], baseline: BaselineState = .
     ])
 
     let warning = try #require(found.first)
-    // Its signals are not also reported one by one.
     #expect(found.count == 1)
     #expect(warning.kind == .illnessWarning)
     #expect(TestClock.daysAgo(warning.start) == 2 && TestClock.daysAgo(warning.end) == 1)
@@ -69,7 +68,6 @@ private func events(_ concerns: [Metric: [Double?]], baseline: BaselineState = .
 @Test func aSingleMildDeviationIsNotReported() {
     #expect(events([.sleepDuration: [0, 2.4, 0]]).isEmpty)
     #expect(events([.sleepDuration: [0, 3.2, 0]]).first?.title == "Short sleep")
-    // Unusually good values and metrics without a concerning side are not events either.
     #expect(events([.heartRateVariability: [0, -4, 0], .steps: [0, 4, 0]]).isEmpty)
 }
 

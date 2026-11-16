@@ -19,7 +19,6 @@ final class BaselineUITests: XCTestCase {
         return app
     }
 
-    /// Keeps a picture of the screen with the test results; `scripts/uitest.sh` collects them.
     private func screenshot(_ name: String) {
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name
@@ -44,7 +43,6 @@ final class BaselineUITests: XCTestCase {
         _ = element("Explained on this device", in: app).waitForExistence(timeout: 20)
         screenshot("today")
 
-        // A value outside its range says what to do about it, on the metric's own screen.
         // The metric's tile, not the readiness text that also names it.
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Resting heart rate'")).firstMatch.tap()
         XCTAssertTrue(element("What to do", in: app).waitForExistence(timeout: 10))
@@ -94,16 +92,19 @@ final class BaselineUITests: XCTestCase {
         XCTAssertTrue(question.waitForExistence(timeout: 10))
         question.tap()
 
-        // With Apple Intelligence the answer is worded by the model and carries its facts;
-        // without it, or when the wording is rejected, the facts are the answer.
         let answer = app.descendants(matching: .any).matching(
             NSPredicate(format: "label CONTAINS 'From your data' OR label CONTAINS 'overnight signals were outside'")).firstMatch
         XCTAssertTrue(answer.waitForExistence(timeout: 60))
+        // The answer streams in: wait until the text stops changing, so the screenshot shows all of it.
+        var shown = ""
+        for _ in 0..<30 where shown != app.staticTexts.allElementsBoundByIndex.map(\.label).joined() {
+            shown = app.staticTexts.allElementsBoundByIndex.map(\.label).joined()
+            Thread.sleep(forTimeInterval: 1.5)
+        }
         screenshot("ask")
     }
 
     func testOnboardingLeadsIntoTheDemo() {
-        // Not a data source the app knows, so it starts as on a first launch.
         let app = XCUIApplication()
         app.launchArguments = ["-dataSource", "none", "-scenario", "healthy"]
         app.launch()
@@ -117,7 +118,6 @@ final class BaselineUITests: XCTestCase {
         XCTAssertTrue(element("Readiness", in: app).waitForExistence(timeout: firstLoad))
     }
 
-    /// The thesis's question on the device: both ways of forecasting against the simple average.
     func testModelCheckScoresBothForecasters() {
         let app = launch(scenario: "healthy")
         XCTAssertTrue(element("Readiness", in: app).waitForExistence(timeout: firstLoad))
@@ -134,8 +134,6 @@ final class BaselineUITests: XCTestCase {
         screenshot("model-check-cost")
     }
 
-    /// Permission, then the same update the nightly task runs, then the banner. The task
-    /// itself cannot be started in a simulator; the debug button stands in for it.
     func testABackgroundUpdateNotifiesAboutReadiness() {
         let app = launch(scenario: "healthy")
         XCTAssertTrue(element("Readiness", in: app).waitForExistence(timeout: firstLoad))
@@ -160,8 +158,6 @@ final class BaselineUITests: XCTestCase {
         screenshot("notification")
     }
 
-    /// The Apple Health path end to end: the debug writer fills the simulator's Health store
-    /// with the healthy demo history, and the app reads it back through HealthKit.
     func testAppleHealthRoundTrip() {
         let app = launch(scenario: "healthy")
         XCTAssertTrue(element("Readiness", in: app).waitForExistence(timeout: firstLoad))
@@ -177,7 +173,6 @@ final class BaselineUITests: XCTestCase {
         for _ in 0..<8 where !source.exists { app.swipeDown() }
         source.tap()
         app.buttons["Apple Health"].tap()
-        // Settings closes, and the new source reloads the app from its first screen.
         allowHealthAccess(in: app)
 
         // The score says last night's signals came back. Wrist temperature cannot be written
@@ -188,8 +183,6 @@ final class BaselineUITests: XCTestCase {
         screenshot("apple-health")
     }
 
-    /// The first screen's own way into Apple Health. What Today shows then depends on what
-    /// the simulator's Health store holds; the tabs are what counts here.
     func testOnboardingConnectsAppleHealth() {
         let app = XCUIApplication()
         app.launchArguments = ["-dataSource", "none"]
@@ -210,7 +203,6 @@ final class BaselineUITests: XCTestCase {
         let everything = app.cells["UIA.Health.AuthSheet.AllCategoryButton"]
         guard everything.waitForExistence(timeout: 10) else { return }
         everything.tap()
-        // Allow sits below the list of data types.
         // Allow sits below the list of data types. The sheet runs in another process, so the
         // test does not know when its scrolling has settled: tap until the page is gone.
         let allow = app.buttons["UIA.Health.Allow.Button"]

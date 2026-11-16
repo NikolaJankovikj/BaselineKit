@@ -1,7 +1,5 @@
 import Forecasting
 
-/// Explanations written from the facts alone. They are what the app shows when Apple
-/// Intelligence is unavailable or its answer does not pass `InsightGuard`.
 public enum TemplatedInsights {
     public static func insight(for facts: EventFacts) -> AnomalyInsight {
         AnomalyInsight(

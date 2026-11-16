@@ -1,17 +1,9 @@
 import Foundation
 
-/// A synthetic person, so the app has realistic data in the simulator and tests are repeatable.
-///
-/// The overnight signals share a slow "strain" state that also reacts to the previous day's
-/// training load, so the series are related the way real ones are. Scripted events sit at
-/// fixed distances from today.
 public struct SyntheticProvider: HealthDataProvider {
     public enum Scenario: String, CaseIterable, Sendable, Identifiable {
-        /// Four nights of illness-like signals ending today, on top of the eventful history.
         case sickWeek
-        /// The same history without the illness.
         case healthy
-        /// Nine days of data: provisional ranges and no alerts yet.
         case coldStart
 
         public var id: Self { self }
@@ -27,7 +19,6 @@ public struct SyntheticProvider: HealthDataProvider {
         self.calendar = calendar
     }
 
-    /// What the synthetic person logged, matching the scripted events.
     public var logs: [ManualLog] {
         guard scenario != .coldStart else { return [] }
         return [(Script.alcoholNight + 1, ManualLog.Kind.alcohol), (Script.hardBlock.upperBound, .hardTraining)]
@@ -36,8 +27,6 @@ public struct SyntheticProvider: HealthDataProvider {
                     .map { ManualLog(date: $0.addingTimeInterval(20 * 3600), kind: kind) }
             }
     }
-
-    // MARK: Daily
 
     public func dailyHistory(days requested: Int) async throws -> DailyHistory {
         let count = scenario == .coldStart ? min(requested, Script.coldStartDays) : requested
@@ -53,7 +42,6 @@ public struct SyntheticProvider: HealthDataProvider {
             let weekday = calendar.component(.weekday, from: day)
             let isWeekend = weekday == 1 || weekday == 7
 
-            // The night that ended this morning reacts to yesterday.
             fatigue = 0.6 * fatigue + 0.8 * rng.gaussian()
             let strain = fatigue + 0.7 * (yesterdayEnergy - Level.activeEnergy) / 230
             let ill = script.illness
@@ -65,7 +53,7 @@ public struct SyntheticProvider: HealthDataProvider {
                 .sleepDuration: 7.3 + (isWeekend ? 0.5 : 0) + 0.6 * rng.gaussian() + 0.5 * ill + script.sleep,
             ]
             if !script.isScripted, rng.unit() < 0.03 {
-                night = [:]  // watch left on the charger
+                night = [:]
             }
 
             let trains = script.hardTraining || (ill == 0 && rng.unit() < 0.4)
@@ -91,16 +79,12 @@ public struct SyntheticProvider: HealthDataProvider {
         return DailyHistory(days: days, values: values, workouts: workouts)
     }
 
-    // MARK: Intraday
-
     public func intradayHistory(hours: Int) async throws -> IntradayHistory {
         let bin = IntradayHistory.binSeconds
         let end = Date(timeIntervalSinceReferenceDate: (now.timeIntervalSinceReferenceDate / bin).rounded(.down) * bin)
         let count = hours * Int(3600 / bin)
         let start = end.addingTimeInterval(-Double(count) * bin)
         let today = calendar.startOfDay(for: now)
-        // A tense 90 minutes a few hours ago, or yesterday afternoon if today has been too
-        // short for that.
         let wakeUp = today.addingTimeInterval(7.5 * 3600)
         let recent = end.addingTimeInterval(-4.5 * 3600)
         let stress = DateInterval(start: recent >= wakeUp ? recent : today.addingTimeInterval(-10 * 3600), duration: 90 * 60)
@@ -115,7 +99,6 @@ public struct SyntheticProvider: HealthDataProvider {
             let time = start.addingTimeInterval(Double(index) * bin)
             let hour = time.timeIntervalSince(calendar.startOfDay(for: time)) / 3600
             let asleep = hour >= 23.5 || hour < 7
-            // A run yesterday evening, unless ill.
             let inWorkout = scenario != .sickWeek && (18..<19).contains(hour) && time < today
             let stressed = scenario != .coldStart && stress.contains(time)
             let sitting = scenario != .coldStart && seated.contains(time)
@@ -145,25 +128,21 @@ public struct SyntheticProvider: HealthDataProvider {
     }
 }
 
-/// Typical values of the synthetic person.
 private enum Level {
     static let restingHeartRate = 57.0
     static let hrv = 62.0
     static let activeEnergy = 560.0
 }
 
-/// What is scripted for a day, by its distance from today.
 private struct Script {
     static let coldStartDays = 9
     static let alcoholNight = 12
     static let hardBlock = 24...26
     static let shortSleepNight = 40
-    /// Severity by days ago: onset three nights ago, peaking yesterday.
     static let illnessCourse = [0.85, 1.0, 0.9, 0.55]
 
     var illness = 0.0
     var hardTraining = false
-    /// Shifts of the night that ended this morning.
     var heartRate = 0.0
     var variability = 0.0
     var temperature = 0.0

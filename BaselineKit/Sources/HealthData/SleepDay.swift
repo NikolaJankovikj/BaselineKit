@@ -5,7 +5,6 @@ import Foundation
 enum SleepDay {
     static let startsHoursBeforeMidnight = 6
 
-    /// The midnight of the sleep day that `date` falls in.
     static func day(containing date: Date, calendar: Calendar) -> Date {
         calendar.startOfDay(for: date.addingTimeInterval(Double(startsHoursBeforeMidnight) * 3600))
     }

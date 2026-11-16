@@ -1,6 +1,5 @@
 import Foundation
 
-/// A health signal with one value per day (or night), in the order the app shows them.
 public enum Metric: String, CaseIterable, Codable, Sendable, Identifiable {
     case restingHeartRate
     case heartRateVariability
@@ -47,7 +46,6 @@ public enum Metric: String, CaseIterable, Codable, Sendable, Identifiable {
         }
     }
 
-    /// Measured during sleep, so the value is complete by the morning. These are the readiness signals.
     public var isOvernight: Bool {
         switch self {
         case .restingHeartRate, .heartRateVariability, .respiratoryRate, .wristTemperature, .sleepDuration: true
@@ -55,10 +53,8 @@ public enum Metric: String, CaseIterable, Codable, Sendable, Identifiable {
         }
     }
 
-    /// Adds up over the day, so today's value is incomplete until midnight.
     public var accumulatesOverDay: Bool { self == .steps || self == .activeEnergy }
 
-    /// The side of the expected range that can signal strain; nil where neither side does.
     public var concerningDirection: Direction? {
         switch self {
         case .restingHeartRate, .respiratoryRate, .wristTemperature: .above
@@ -79,6 +75,5 @@ public enum Metric: String, CaseIterable, Codable, Sendable, Identifiable {
 public enum Direction: String, Codable, Sendable {
     case above, below
 
-    /// +1 when a higher value is the concerning one, −1 when a lower one is.
     public var sign: Double { self == .above ? 1 : -1 }
 }

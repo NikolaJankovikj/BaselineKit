@@ -1,9 +1,6 @@
 import Foundation
 
-/// Checks on text the language model wrote, before the app shows it. The model only
-/// explains; if it adds a number or drifts toward a diagnosis, the template is used instead.
 public enum InsightGuard {
-    /// Stems that would make a wellness note read as a diagnosis or as medication advice.
     static let diagnosisTerms = [
         "diagnos", "disease", "disorder", "syndrome", "infection", "infected", "virus", "viral", "bacteri",
         "covid", "influenza", "the flu", "fever", "pneumonia", "arrhythmia", "fibrillation", "hypertension",
@@ -23,7 +20,6 @@ public enum InsightGuard {
         unsupported(["last night", "yesterday"], in: text, source: source)
     }
 
-    /// The `phrases` that `text` uses and `source` does not.
     static func unsupported(_ phrases: [String], in text: String, source: String) -> [String] {
         phrases.filter { text.localizedCaseInsensitiveContains($0) && !source.localizedCaseInsensitiveContains($0) }
     }
@@ -33,8 +29,6 @@ public enum InsightGuard {
         return diagnosisTerms.filter(lowered.contains)
     }
 
-    /// Signals that `text` puts on the wrong side of their range.
-    ///
     /// The source says "resting heart rate 64 bpm, above the expected 55–59". The model
     /// tends to lump signals together ("heart rate and its variability were both elevated"),
     /// so a sentence that only speaks of one direction may not name a signal that the
@@ -57,8 +51,6 @@ public enum InsightGuard {
         return misplaced.sorted()
     }
 
-    /// Whether `text` only uses numbers and day words from `source`, keeps every signal on
-    /// the side of its range that `source` gives it, and stays clear of diagnosis language.
     public static func accepts(_ text: String, source: String) -> Bool {
         inventedNumbers(in: text, source: source).isEmpty && diagnosisTerms(in: text).isEmpty
             && misplacedSignals(in: text, source: source).isEmpty && misplacedDays(in: text, source: source).isEmpty

@@ -17,7 +17,6 @@ extension ManualLog.Kind {
     }
 }
 
-/// Flagged events and the user's own logs, newest first.
 struct JournalView: View {
     @Environment(AppModel.self) private var model
 
@@ -97,7 +96,6 @@ private struct EventRow: View {
     }
 }
 
-/// What moved, why it may have, and what the user makes of it.
 struct EventDetailView: View {
     @Environment(AppModel.self) private var model
     var event: AnomalyEvent
@@ -200,8 +198,6 @@ private struct BulletLabelStyle: LabelStyle {
     }
 }
 
-/// "Makes sense" or "False alarm", and tags for what was going on. Stored with the event,
-/// to label and explain events later.
 private struct FeedbackCard: View {
     @Environment(AppModel.self) private var model
     var event: AnomalyEvent

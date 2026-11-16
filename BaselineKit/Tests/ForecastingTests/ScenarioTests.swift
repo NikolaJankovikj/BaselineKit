@@ -4,7 +4,6 @@ import Testing
 
 @testable import Forecasting
 
-/// The whole daily pipeline on the synthetic person, with the real model.
 private struct Scenario {
     var history: DailyHistory
     var result: DailyForecastEngine.Result
@@ -28,7 +27,6 @@ private struct Scenario {
     #expect(warning.suggestsClinician)
     #expect(warning.signals.count >= 3)
 
-    // The expected range stays where it was before the illness instead of adapting to it.
     let restingHeartRate = try #require(sick.result.metrics[.restingHeartRate])
     #expect(restingHeartRate.days.suffix(4).map(\.horizon) == [1, 2, 3, 4])
     let readiness = try #require(Readiness(sick.result.metrics))
@@ -56,7 +54,6 @@ private struct Scenario {
     let today = try #require(cold.result.metrics[.restingHeartRate]?.days.last)
     #expect(today.expected != nil)
     #expect(Readiness(cold.result.metrics) != nil)
-    // Too little history at first for any range.
     #expect(cold.result.metrics[.restingHeartRate]?.days.first?.expected == nil)
 }
 
@@ -76,7 +73,6 @@ private struct Scenario {
     let engine = DailyForecastEngine(calendar: TestClock.calendar)
     let again = try await engine.assess(first.history, depth: 10, cache: first.result.newForecasts)
 
-    // Everything but today's still-changing forecast came from the cache.
     #expect(!first.result.newForecasts.isEmpty)
     #expect(again.newForecasts.isEmpty)
     #expect(again.metrics == first.result.metrics)
@@ -101,7 +97,6 @@ private struct Scenario {
 
     let restingHeartRate = try #require(scores.first { $0.metric == .restingHeartRate })
     #expect(restingHeartRate.days > 30)
-    // A q10–q90 band should hold roughly four values in five.
     #expect((0.6...0.95).contains(restingHeartRate.modelCoverage))
     #expect((0.6...0.95).contains(restingHeartRate.simpleCoverage))
     #expect(restingHeartRate.modelError < 2 * restingHeartRate.simpleError)
@@ -115,7 +110,6 @@ private struct Scenario {
     let episode = try #require(stress.events.first)
     #expect(stress.events.count == 1)
     #expect(episode.kind == .intradayStress)
-    // The synthetic person had a tense 90 minutes that began four and a half hours ago.
     let began = TestClock.now.addingTimeInterval(-4.5 * 3600)
     #expect(abs(episode.start.timeIntervalSince(began)) <= 600)
     #expect(episode.end.timeIntervalSince(episode.start) >= 60 * 60)

@@ -17,7 +17,6 @@ func day(_ daysAgo: Int) -> Date {
     testCalendar.date(byAdding: .day, value: -daysAgo, to: testCalendar.startOfDay(for: testNow))!
 }
 
-/// Days ending today with the given values and one fixed expected range.
 func assessed(_ metric: Metric, _ values: [Double?], expected: Band) -> MetricAssessment {
     MetricAssessment(
         metric: metric,

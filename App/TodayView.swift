@@ -43,7 +43,6 @@ struct TodayView: View {
     }
 }
 
-/// Shown until there are enough nights for alerts.
 private struct BaselineBanner: View {
     var nights: Int
 
@@ -58,8 +57,6 @@ private struct BaselineBanner: View {
         }
     }
 }
-
-// MARK: - Readiness
 
 private struct ReadinessCard: View {
     @Environment(AppModel.self) private var model
@@ -157,9 +154,6 @@ private struct ContributionRow: View {
     }
 }
 
-// MARK: - Insight
-
-/// The explanation of the event that is going on, with one suggestion.
 private struct InsightCard: View {
     @Environment(AppModel.self) private var model
     var event: AnomalyEvent
@@ -195,7 +189,6 @@ private struct InsightCard: View {
     }
 }
 
-/// Shown from the event's flag, which the rules set. The language model has no say in it.
 struct ClinicianNote: View {
     var body: some View {
         Label("These signals have persisted or are well outside your range. If you feel unwell, or this continues, consider talking to a clinician.", systemImage: "stethoscope")
@@ -222,8 +215,6 @@ struct InsightSourceLabel: View {
 extension String {
     var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
 }
-
-// MARK: - Stress
 
 private struct StressCard: View {
     @Environment(AppModel.self) private var model
@@ -295,8 +286,6 @@ private struct StressCard: View {
     }
 }
 
-// MARK: - Metrics
-
 private struct MetricGrid: View {
     @Environment(AppModel.self) private var model
 
@@ -354,7 +343,6 @@ private struct MetricTile: View {
     }
 }
 
-/// Two weeks of values over the shaded expected range.
 private struct Sparkline: View {
     var days: ArraySlice<DayAssessment>
     var tint: Color

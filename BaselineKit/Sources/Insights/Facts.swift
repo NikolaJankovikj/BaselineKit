@@ -2,27 +2,20 @@ import Forecasting
 import Foundation
 import HealthData
 
-/// What is known about one event, worded by code. The language model and the template both
-/// start from exactly this, and the model's output is checked against it.
 public struct EventFacts: Sendable, Equatable {
     public struct Signal: Sendable, Equatable {
-        /// "resting heart rate"
         public var name: String
         public var isAbove: Bool
-        /// "64 bpm, above the expected 55–59"
         public var detail: String
     }
 
     public var kind: AnomalyEvent.Kind
     public var title: String
-    /// "over the last 4 nights"
     public var when: String
     public var signals: [Signal]
-    /// What the user's own data offers as context, as short phrases.
     public var context: [String]
     public var suggestsClinician: Bool
 
-    /// - Parameter tags: what the user tagged this event with in their feedback.
     public init(_ event: AnomalyEvent, in snapshot: HealthSnapshot, tags: Set<ManualLog.Kind> = []) {
         kind = event.kind
         title = event.title
@@ -36,7 +29,6 @@ public struct EventFacts: Sendable, Equatable {
         context += Self.context(from: event.start, to: event.end, in: snapshot)
     }
 
-    /// What the logs and workouts offer as context for the days from `start` to `end`.
     static func context(from start: Date, to end: Date, in snapshot: HealthSnapshot) -> [String] {
         // An evening log explains the night that follows it.
         let window = snapshot.calendar.date(byAdding: .day, value: -1, to: start).map { DateInterval(start: $0, end: max($0, end)) }
@@ -50,8 +42,6 @@ public struct EventFacts: Sendable, Equatable {
         return context
     }
 
-    /// Active energy over the three days before `start` at least a quarter above the four
-    /// weeks before those.
     private static func loadWasHigh(before start: Date, in snapshot: HealthSnapshot) -> Bool {
         let energy = (snapshot.metrics[.activeEnergy]?.days ?? []).filter { $0.day < start }.compactMap(\.observed)
         let recent = energy.suffix(3)
@@ -68,7 +58,6 @@ public struct EventFacts: Sendable, Equatable {
             .filter { !$0.signals.isEmpty }
     }
 
-    /// The facts as the prompt gives them to the model.
     public var prompt: String {
         var lines = ["Event: \(title)", "When: \(when)"]
         for side in sides {
@@ -81,16 +70,12 @@ public struct EventFacts: Sendable, Equatable {
     }
 }
 
-/// What is known about one day's value of one metric, worded by code. Whether it is the
-/// better or the worse side of the range is decided here, not by the model.
 public struct DayFacts: Sendable, Hashable {
     public var metric: Metric
     public var isBetter: Bool
-    /// "Resting heart rate today (Fri 13 Nov): 64 bpm, above the expected 55–59"
     public var reading: String
     public var context: [String]
 
-    /// nil when the day is within its expected range, or has no value or range.
     public init?(_ metric: Metric, _ day: DayAssessment, in snapshot: HealthSnapshot) {
         guard let observed = day.observed, let expected = day.expected, !expected.contains(observed) else { return nil }
         self.metric = metric
@@ -113,18 +98,12 @@ public struct DayFacts: Sendable, Hashable {
 /// better and which for the worse is decided here: the language model gets them as two
 /// lists and does not have to judge a number.
 public struct WeekFacts: Sendable, Equatable {
-    /// "Sat 7 Nov – Fri 13 Nov"
     public var range: String
-    /// "Resting heart rate came down to 56 bpm, from 60 bpm the week before"
     public var improvements: [String] = []
-    /// "Heart rate variability fell to 53 ms, from 62 ms the week before"
     public var setbacks: [String] = []
-    /// "Several vitals elevated, over the last 4 nights", most important first.
     public var flagged: [String]
     public var flaggedKinds: [AnomalyEvent.Kind]
-    /// "31 of 35 overnight readings were within their expected range"
     public var withinRange: String?
-    /// At least four in five were, which is what a calibrated range holds.
     public var isMostlyWithinRange: Bool
 
     public init(_ snapshot: HealthSnapshot) {

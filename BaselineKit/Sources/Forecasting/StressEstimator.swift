@@ -1,11 +1,6 @@
 import Foundation
 import HealthData
 
-/// An estimate of daytime stress: heart rate above what Chronos-2 expects from the recent
-/// resting heart rate and the steps taken.
-///
-/// It is an estimate, not a measurement. The thesis found that such residuals flag any
-/// departure from rest, of which stress is one cause among several.
 public struct StressAssessment: Sendable, Equatable {
     public enum Level: String, Sendable {
         case low, moderate, high
@@ -15,15 +10,12 @@ public struct StressAssessment: Sendable, Equatable {
         public var time: Date
         public var heartRate: Double?
         public var expected: Band?
-        /// σ above the expected heart rate; nil while asleep, training or moving, and without data.
         public var score: Double?
 
         public var id: Date { time }
     }
 
-    /// One point per 5-minute bin, oldest first.
     public var points: [Point] = []
-    /// From the last hour; nil when that hour has nothing to score.
     public var level: Level?
     public var events: [AnomalyEvent] = []
 }
@@ -32,15 +24,11 @@ public struct StressEstimator: Sendable {
     /// Bins an expected range stays frozen during an episode (see `Anchoring`): 80 minutes,
     /// the model's whole horizon.
     static let maxFrozenBins = 16
-    /// Steps in a 5-minute bin from which movement explains the heart rate.
     static let activeSteps = 60.0
-    /// σ above expected from which a bin counts as elevated.
     static let elevatedScore = 2.0
     /// Elevated bins closer than this belong to one episode: heart-rate samples are sparse.
     static let episodeGapBins = 2
-    /// Shorter episodes are not reported.
     static let minimumEpisodeBins = 3
-    /// Resting bins the model needs to have seen before a range is shown.
     static let minimumRestingBins = 12
     private static let binsPerHour = Int(3600 / IntradayHistory.binSeconds)
 
@@ -50,8 +38,6 @@ public struct StressEstimator: Sendable {
         self.forecaster = forecaster
     }
 
-    /// Scores the last `scoredHours` of `history`. Episodes become events only once the
-    /// baseline is established.
     public func assess(_ history: IntradayHistory, scoredHours: Int = 12, baseline: BaselineState) async throws -> StressAssessment {
         let count = history.heartRate.count
         let scored = min(count - 1, scoredHours * Self.binsPerHour)
@@ -94,7 +80,6 @@ public struct StressEstimator: Sendable {
         return assessment
     }
 
-    /// The mean excess over the hour, counting a bin at or below expected as zero.
     private static func level(of lastHour: ArraySlice<StressAssessment.Point>) -> StressAssessment.Level? {
         let scores = lastHour.compactMap(\.score)
         guard !scores.isEmpty else { return nil }
@@ -102,7 +87,6 @@ public struct StressEstimator: Sendable {
         return excess < 0.75 ? .low : excess < 1.75 ? .moderate : .high
     }
 
-    /// Stretches of scored bins above the expected range that include a clearly elevated one.
     private static func episodes(in points: [StressAssessment.Point]) -> [AnomalyEvent] {
         let elevated = points.indices.filter { bin in
             guard points[bin].score != nil, let heartRate = points[bin].heartRate, let expected = points[bin].expected else { return false }

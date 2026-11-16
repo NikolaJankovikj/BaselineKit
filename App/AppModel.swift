@@ -5,11 +5,6 @@ import Insights
 import Observation
 import Persistence
 
-/// The app's state: where the data comes from, and what the pipeline made of it.
-///
-/// A refresh reads the history, forecasts with Chronos-2, scores and detects in Swift, and
-/// only then asks for explanations. Every number and flag on screen comes from the first
-/// three steps.
 @Observable
 final class AppModel {
     static let shared = AppModel()
@@ -33,8 +28,6 @@ final class AppModel {
     static let fullDepth = 187
     private static let intradayHours = 36
 
-    // MARK: Settings
-
     private let defaults: UserDefaults
 
     /// - Parameter defaults: where the three settings are kept. The tests pass their own,
@@ -46,7 +39,6 @@ final class AppModel {
         forecastMode = defaults.string(forKey: "forecastMode").flatMap(ForecastMode.init) ?? .univariate
     }
 
-    /// nil until onboarding is finished.
     var dataSource: DataSource? {
         didSet { defaults.set(dataSource?.rawValue, forKey: "dataSource") }
     }
@@ -59,10 +51,7 @@ final class AppModel {
         didSet { defaults.set(forecastMode.rawValue, forKey: "forecastMode") }
     }
 
-    // MARK: State
-
     private(set) var phase = Phase.idle
-    /// True while the older part of the six months is still being assessed.
     private(set) var isExtending = false
     private(set) var history: DailyHistory?
     private(set) var metrics: [Metric: MetricAssessment] = [:]
@@ -74,15 +63,11 @@ final class AppModel {
     private var generatedAdvice: [DayFacts: Sourced<MetricAdvice>] = [:]
     private(set) var store = Store(directory: nil)
 
-    /// Whose journal `store` holds: the demo scenario's or the user's own.
     private var storeOwner: String?
     private var refreshTask: Task<Void, Never>?
     private var lastRefresh = Date.distantPast
     private let generator = InsightGenerator()
-    /// Where Apple Health data comes from. The tests put a stand-in here.
     var healthProvider: () -> any HealthDataProvider = { HealthKitProvider() }
-
-    // MARK: Lifecycle
 
     /// Switches where the data comes from. The root view reloads whenever the source
     /// changes; until that is done nothing of the previous source stays on screen.
@@ -109,7 +94,6 @@ final class AppModel {
         await refresh()
     }
 
-    /// A refresh nobody is watching: afterwards, notify about what it found.
     func refreshInBackground() async {
         await refresh()
         await Notifier.announce(self)
@@ -125,7 +109,6 @@ final class AppModel {
                 let synthetic = SyntheticProvider(scenario: scenario)
                 provider = synthetic
                 if storeOwner != scenario.rawValue {
-                    // The synthetic person brings their own journal; nothing of it is saved.
                     store = Store(directory: nil)
                     synthetic.logs.forEach(store.add)
                     storeOwner = scenario.rawValue
@@ -176,20 +159,15 @@ final class AppModel {
         events = (AnomalyDetector.events(in: result.metrics, baseline: baseline) + (stress?.events ?? [])).sorted { $0.end > $1.end }
     }
 
-    // MARK: Insights
-
     var snapshot: HealthSnapshot {
         HealthSnapshot(metrics: metrics, events: events, logs: store.logs, workouts: history?.workouts ?? [])
     }
 
-    /// What the Today screen talks about: the most important of the events that are going
-    /// on or ended within a day.
     var currentEvent: AnomalyEvent? {
         let yesterday = snapshot.today.addingTimeInterval(-86_400)
         return events.filter { $0.end >= yesterday }.sorted(by: AnomalyEvent.byImportance).first
     }
 
-    /// The explanation of an event, generated once per state of the event and then kept.
     func explanation(of event: AnomalyEvent) async -> Sourced<AnomalyInsight> {
         if let stored = store.insight(for: event) { return stored }
         let facts = EventFacts(event, in: snapshot, tags: store.feedback(for: event).tags)
@@ -198,8 +176,6 @@ final class AppModel {
         return explained
     }
 
-    /// What to do about one day's value: the template at once, Apple Intelligence's wording
-    /// once it is ready and checked. Kept until the next refresh.
     func advice(for metric: Metric, on day: DayAssessment) -> Sourced<MetricAdvice>? {
         guard let facts = DayFacts(metric, day, in: snapshot) else { return nil }
         return generatedAdvice[facts] ?? Sourced(TemplatedInsights.advice(for: facts), source: .template)
@@ -223,8 +199,6 @@ final class AppModel {
         weeklyReport = report
     }
 
-    // MARK: Journal
-
     func log(_ kind: ManualLog.Kind) {
         let log = ManualLog(date: .now, kind: kind)
         store.add(log)
@@ -238,8 +212,6 @@ final class AppModel {
             event.kind != .intradayStress && event.start <= day && day <= event.end && event.signals.contains { $0.metric == metric }
         }
     }
-
-    // MARK: Data management
 
     var csvExport: String { dailyCSV(metrics) }
 
@@ -260,8 +232,6 @@ final class AppModel {
         }
     #endif
 
-    /// The model-against-simple-average comparison on the current history, for both ways of
-    /// forecasting.
     func backtest(mode: ForecastMode) async throws -> [BacktestScore] {
         guard let history else { return [] }
         let engine = DailyForecastEngine(mode: mode)
