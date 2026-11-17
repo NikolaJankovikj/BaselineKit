@@ -55,18 +55,6 @@ This project builds a mobile app that does that judgement on the phone. In an ea
 \paragraph{On-device language models.} Since iOS 26 the Foundation Models framework exposes Apple's on-device model of about 3B parameters~\cite{apple2025afm}. It offers \emph{guided generation}, where a Swift type marked \texttt{@Generable} constrains decoding to that type's schema, and \emph{tool calling}. The model is small, has a 4{,}096-token context, and is updated with the operating system, which matters later.
 
 % ---------------------------------------------------------------------------
-\section{Requirements}
-
-We fixed the following requirements before building:
-\begin{itemize}
-  \item \textbf{R1 Privacy.} Health data never leaves the device: no network code, no account, no analytics, no third-party dependency.
-  \item \textbf{R2 Honesty.} Every number and flag comes from the forecaster and fixed rules. The language model may explain but never compute, decide, or diagnose. The simple-average comparison stays visible.
-  \item \textbf{R3 Graceful degradation.} Every screen works without Apple Intelligence (unsupported device, disabled, or model not yet downloaded) and without Apple Health (demo data).
-  \item \textbf{R4 Actionability.} A value outside its range comes with a concrete suggestion on the screen where the user sees it.
-  \item \textbf{R5 Testability.} The pipeline is deterministic and covered by automated tests, including the parts that call the model.
-\end{itemize}
-
-% ---------------------------------------------------------------------------
 \section{Architecture}
 
 The app is a SwiftUI app for iOS 26 and later. Everything that is not a screen lives in a local Swift package, \texttt{BaselineKit}, with four modules (Table~\ref{tab:modules}). The package's tests run on the Mac in about half a minute without a simulator, which kept the development loop short. Figure~\ref{fig:arch} shows the data flow.
@@ -84,10 +72,10 @@ The app is a SwiftUI app for iOS 26 and later. Everything that is not a screen l
     \node[box, below=8mm of e] (f) {Facts worded\\ by code};
     \node[box, left=of f] (g) {Apple\\ Intelligence\\ (\texttt{@Generable})};
     \node[box, left=of g] (h) {Output\\ guard};
-    \node[box, left=of h] (i) {Template};
+    \node[box, left=9mm of h] (i) {Template};
     \node[box, left=of i] (j) {Screen};
     \foreach \src/\dst in {a/b, b/c, c/d, d/e, e/f, f/g, g/h} \draw[->] (\src) -- (\dst);
-    \draw[->] (h) -- (i) node[midway, above=4mm, font=\scriptsize]{reject};
+    \draw[->] (h) -- (i) node[midway, above, font=\scriptsize]{reject};
     \draw[->] (i) -- (j);
     \draw[->] (h.south) |- ++(0,-5mm) -| node[pos=0.25, below, font=\scriptsize]{accept} (j.south);
   \end{tikzpicture}
@@ -122,10 +110,12 @@ We stored data as two JSON documents rather than in SwiftData. The app never que
 \subsection{Health data}
 \texttt{HealthKitProvider}~\cite{apple_healthkit} reads eight daily metrics: resting heart rate, HRV, respiratory rate, wrist temperature, sleep duration, steps, active energy and VO$_2$max. It also reads workouts and the last 36 hours of heart rate and steps for the stress estimate. It writes the user's alcohol logs back to Health. Because the simulator's Health store is empty, a \texttt{SyntheticProvider} generates a person whose overnight signals share a slow ``strain'' state that reacts to the previous day's training load. Scripted events sit at fixed distances from today. There are three scenarios: a \emph{sick week} that ends in four nights of illness-like signals, a \emph{healthy} history, and a \emph{first days} history with only nine nights. A SplitMix64 generator makes the data identical on every platform, so tests and screenshots are repeatable.
 
-\subsection{On-device forecasting}\label{sec:forecast}
-We exported \texttt{chronos-2-small} with coremltools~\cite{coremltools} as one fixed-shape ML Program: 32 rows of 512 context steps in, 13 quantile levels of 16 steps out. Rows with the same group id attend to each other, so one call holds either many independent series or a joint group with covariates. Shorter histories are left-padded and masked, which is exact. The model runs in float32 on the CPU: instance normalisation overflows float16, and background tasks may not use the GPU.
+\subsection{Chronos-2 on iOS with Core ML}\label{sec:forecast}
+Chronos-2 is published as a PyTorch model with a Python pipeline around it. iOS runs neither, so the forecaster had to become a Core ML model that the app calls from Swift. This section describes how, since the same steps apply to other PyTorch time-series models.
 
-Table~\ref{tab:parity} compares weight compressions against the PyTorch pipeline on golden fixtures. The fixtures cover cold start, a history longer than the context, missing values, a constant series, joint targets, and covariates. The app reads q10, q50 and q90, so our tolerance is a maximum error below 5\% of the q10--q90 width at those levels. We ship int8: a quarter of the size, within tolerance, and no slower. A Swift test asserts the same tolerance against the same fixtures.
+\paragraph{The model.} \texttt{chronos-2-small} is an encoder-only transformer with about 28M parameters: 6 layers, model width 512, 8 attention heads. A series is normalised by its own mean and standard deviation, squashed with $\operatorname{arcsinh}$, and cut into patches of 16 steps. Each patch becomes one token, together with a time encoding and a mask of which steps were observed. A learned \texttt{[REG]} token and one token for the future patch follow. Every layer attends twice: \emph{along time}, within one series with rotary position embeddings, and \emph{across the group}, between series at the same time step. The second attention lets one call forecast related series jointly and use covariates. The future token is decoded into 13 quantile levels (q01 to q99) for the next 16 steps.
+
+\paragraph{Why it cannot be converted as it is.} Core ML compiles a static graph from a traced model, and the stock forward pass resists tracing in four ways. Missing values are NaN, and the model removes them with \texttt{nanmean}, which Core ML lacks. Shapes depend on the input: the context length, the number of patches and the size of each group change from call to call. Padding, group ids and the time encoding are computed in Python outside the model. And the graph uses operations without a Core ML equivalent, such as \texttt{asinh}, as well as attention masks filled with the smallest float32, which turns into $-\infty$ under reduced precision.
 
 \begin{table}[t]
   \centering\small
@@ -145,6 +135,30 @@ Table~\ref{tab:parity} compares weight compressions against the PyTorch pipeline
   \end{tabular}
 \end{table}
 
+\paragraph{A fixed-shape restatement.} We therefore wrote \texttt{Chronos2Export}, a PyTorch module of about 180 lines that reuses the original weights and computes the same function with only fixed shapes and plain operations:
+
+\begin{itemize}
+  \item \textbf{Fixed shapes.} One call takes 32 rows of 512 context steps and returns 32 rows of 13 quantiles over 16 steps. The inputs are \texttt{context} (32$\times$2$\times$512), \texttt{known\_future} (32$\times$2$\times$16) and \texttt{group\_ids} (32). Channel 0 of each input holds the values and channel 1 holds 1 where a value was observed.
+  \item \textbf{Masks instead of NaN.} Mean and standard deviation are sums weighted by the observed channel, and a patch with no observed value is masked out of attention. A shorter history is left-padded as unobserved. This is exact rather than an approximation: unobserved patches are never attended to, rotary embeddings depend only on relative position, and the time encoding counts back from the start of the forecast. An unused row is all unobserved and sits alone in its own group.
+  \item \textbf{Precomputed tables.} With the shape fixed, the rotary $\cos$/$\sin$ tables, the time encodings and the \texttt{[REG]} embedding are constants stored in the model rather than computed in it. No shape is read back from a tensor, because the converter cannot fold the integer casts that tracing such reads produces.
+  \item \textbf{Plain operations.} $\operatorname{arcsinh}(x)$ is written as $\operatorname{sign}(x)\log(|x|+\sqrt{x^2+1})$, which avoids the cancellation that $x+\sqrt{x^2+1}$ suffers for negative $x$. Masked attention scores get $-10^4$, which gives the same softmax and stays finite at any precision. Group attention carries no position, since the rows of a group have no order.
+\end{itemize}
+
+\paragraph{Conversion.} The module is traced with \texttt{torch.jit.trace} and converted by coremltools~\cite{coremltools} into an ML Program for iOS 18 and later. The model computes in float32. In float16, instance normalisation squares raw values, and the square of a day's step count overflows. The 13 quantile levels are stored in the model's metadata, so the app finds q10, q50 and q90 by level rather than by position. The export script, about 230 lines, also generates golden fixtures. These are six forecasting tasks run through the stock PyTorch pipeline: a nine-day cold start, a history longer than the context, a series with a quarter of its values missing, a constant series, two targets forecast jointly, and a target with past and known-future covariates.
+
+\paragraph{Compression.} Table~\ref{tab:parity} compares weight compressions against the PyTorch pipeline on these fixtures. Each variant is saved, loaded from disk on the CPU as the app runs it, and measured. The app reads q10, q50 and q90, so our tolerance is a maximum error below 5\% of the q10--q90 width at those levels. We ship int8 weights with per-channel symmetric quantisation: a quarter of the size, within tolerance, and no slower. Six-bit palettisation would save another 7\,MB but just misses the tolerance (0.058). Four-bit palettisation is off by up to a quarter of the band. Compression costs most at q01 and q99, which the app does not use. The script refuses to install a shipped variant that fails the tolerance, and a Swift test asserts the same tolerance against the same fixtures on every test run.
+
+
+\paragraph{Running it in the app.} \texttt{Chronos2Forecaster} is a Swift actor around the model, about 200 lines.
+\begin{itemize}
+  \item \textbf{Loading.} The package ships the \texttt{.mlpackage} as exported. \texttt{swift build} has no Core ML compiler, so the app compiles the model on first use with \texttt{MLModel.compileModel} and keeps the result in Caches. The cached copy is named after the package's model identifier, so a new export is compiled again. The input shapes are read from the model description, so a re-export with another row count or context length needs no code change.
+  \item \textbf{Compute units.} The model runs on the CPU only. The Neural Engine does not run float32, and a background task may not use the GPU.
+  \item \textbf{Batching.} A forecasting task is one or more target series with optional covariates. Tasks are packed into 32-row calls, one group id per task. In the default per-metric mode each metric and forecast day is a one-row task, so one call covers four days of all eight metrics. In joint mode a day's metrics, the user's logs and a weekend flag share one group id.
+  \item \textbf{Reading the output.} q10, q50 and q90 become the expected range. Neighbouring quantiles of a compressed model can cross by a hair, so the three are sorted before use.
+\end{itemize}
+Section~\ref{sec:eval} reports the cost of a call. The app logs its own forecasting time on every refresh.
+
+\subsection{Expected ranges and scores}
 For each metric and day, the \emph{expected range} is the forecast's q10--q90 and the \emph{score} is the standardised residual from the thesis,
 \begin{equation}
   z = \frac{y - q_{0.5}}{\hat\sigma}, \qquad \hat\sigma = \frac{q_{0.9}-q_{0.1}}{2.563}.
@@ -173,9 +187,9 @@ The model is used in four places: the explanation of a flagged event, the advice
   \item \textbf{Guided generation.} Outputs are \texttt{@Generable} structs, for example \texttt{AnomalyInsight} with a summary, one to three likely contributors and one suggestion. Greedy sampling makes the same facts always give the same text.
 \end{itemize}
 
-\paragraph{Output guard.} \texttt{InsightGuard} accepts a text only if (i) every number in it occurs in the facts, compared by value so that ``7'' matches ``7,0''; (ii) it contains no diagnosis or medication terms from a list of stems; (iii) no sentence places a signal on the opposite side of its range from the facts; and (iv) ``last night'' and ``yesterday'' appear only where the facts use them. A rejected text is replaced by a template written from the same facts. The templates are also what the app shows without Apple Intelligence, which satisfies R3.
+\paragraph{Output guard.} \texttt{InsightGuard} accepts a text only if (i) every number in it occurs in the facts, compared by value so that ``7'' matches ``7,0''; (ii) it contains no diagnosis or medication terms from a list of stems; (iii) no sentence places a signal on the opposite side of its range from the facts; and (iv) ``last night'' and ``yesterday'' appear only where the facts use them. A rejected text is replaced by a template written from the same facts. The templates are also what the app shows without Apple Intelligence, so every screen works without it.
 
-\paragraph{Advice where the value is.} The first version explained only flagged events, and the user had to open the Insights tab to learn anything. To meet R4, the metric detail screen now shows a \emph{What to do} card whenever the day in focus is outside its range (Figure~\ref{fig:advice}, left). Code decides whether the reading is the better or worse side for that metric: higher HRV is better, higher resting heart rate is worse, and fewer steps is worse. It collects context from the user's logs and workouts, such as alcohol logged the evening before or a 95-minute run. The template advice for that metric and side appears at once. The model's version, which links the reading to the context, replaces it when it is ready and accepted. Scrubbing across the chart waits 400\,ms before starting a generation, and results are cached until the next refresh.
+\paragraph{Advice where the value is.} The first version explained only flagged events, and the user had to open the Insights tab to learn anything. So that a value outside its range comes with a suggestion where the user sees it, the metric detail screen now shows a \emph{What to do} card whenever the day in focus is outside its range (Figure~\ref{fig:advice}, left). Code decides whether the reading is the better or worse side for that metric: higher HRV is better, higher resting heart rate is worse, and fewer steps is worse. It collects context from the user's logs and workouts, such as alcohol logged the evening before or a 95-minute run. The template advice for that metric and side appears at once. The model's version, which links the reading to the context, replaces it when it is ready and accepted. Scrubbing across the chart waits 400\,ms before starting a generation, and results are cached until the next refresh.
 
 \paragraph{Ask: three agents.} Ask is a chat about the user's own data. Each message passes through three model sessions, each with its own short instructions:
 
@@ -191,7 +205,7 @@ The model is used in four places: the explanation of a flagged event, the advice
   \centering
   \includegraphics[width=0.3\textwidth]{metric-advice.png}\hspace{1.5em}
   \includegraphics[width=0.3\textwidth]{ask.png}
-  \caption{Left: an out-of-range resting heart rate with its advice card on the metric screen. Right: an Ask answer streamed by the writer agent, with the research agent's lookups one tap away (``From your data · 2 lookups'').}
+  \caption{Left: an out-of-range resting heart rate with its advice card on the metric screen. Right: an Ask answer streamed by the writer agent, with the research agent's lookups one tap away (``From your data $\cdot$ 2 lookups'').}
   \label{fig:advice}
 \end{figure}
 
@@ -210,7 +224,7 @@ The app has three tabs (Figure~\ref{fig:screens}). \textbf{Today} shows readines
 \end{figure}
 
 \subsection{Background updates, notifications and privacy}
-A HealthKit observer query and a nightly \texttt{BGProcessingTask} rerun the pipeline when new data arrives. Afterwards the app sends local notifications, each of which the user can switch off: a new event, the morning readiness score, and the weekly report on Mondays. The app contains no network code. Its two files are stored with data protection, and Settings can export the daily values as CSV or erase everything. HealthKit, the forecaster and the language model all run on the device (R1).
+A HealthKit observer query and a nightly \texttt{BGProcessingTask} rerun the pipeline when new data arrives. Afterwards the app sends local notifications, each of which the user can switch off: a new event, the morning readiness score, and the weekly report on Mondays. The app contains no network code. Its two files are stored with data protection, and Settings can export the daily values as CSV or erase everything. HealthKit, the forecaster and the language model all run on the device, and no health data leaves it.
 
 % ---------------------------------------------------------------------------
 \section{Evaluation}\label{sec:eval}
@@ -241,10 +255,10 @@ The live-model tests do not compare against fixed text. They check that the outp
 \subsection{Forecast accuracy and cost}
 On the synthetic person, the model check gives Chronos-2 and the simple average the same error for resting heart rate (1.47 vs 1.47\,bpm mean absolute error) and similar coverage of the q10--q90 band (77\% vs 76\%, nominal 80\%). Joint forecasting with the other metrics as group members gives 1.46\,bpm. This repeats the thesis result~\cite{jankovikj2026chronos}: on a person's own daily series, the foundation model is not more accurate than a moving average. In the app it earns its place in other ways. It gives calibrated ranges from the first few days, it handles missing nights without imputation, it provides the multi-step horizons that frozen ranges need, and one model covers all eight metrics.
 
-A 32-row call takes about 55\,ms natively on an M3 and about 410\,ms in the iOS simulator on the same machine. The first launch forecasts six months of eight metrics, and Today appears after a few seconds while the rest fills in behind it. Later refreshes forecast one new day per metric.
+A 32-row call takes about 55\,ms natively on an M3 and about 410\,ms in the iOS simulator on the same machine; it has not been timed on an iPhone. The first launch forecasts six months of eight metrics, and Today appears after a few seconds while the rest fills in behind it. Later refreshes forecast one new day per metric.
 
 \subsection{The language model in practice}
-Two observations from development are worth reporting.
+The following observations come from development and from the tests against the live model.
 
 \paragraph{The model changes under the app.} The prompts and guard were first tuned on the macOS 26 model. The model shipped with iOS and macOS 27 then skipped the tools for about half of the Ask questions and answered from nothing, fluently: ``nothing was flagged this week'' when something was. Since the model is part of the operating system, an app that relies on it needs regression tests against the live model that are rerun after every OS update. Ours caught this regression.
 
