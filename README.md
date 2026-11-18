@@ -5,13 +5,13 @@ Chronos-2-small runs on the device (Core ML) and forecasts each metric's expecte
 Fixed rules turn deviations into flags, and Apple Intelligence (Foundation Models) puts the
 flags into words. Nothing leaves the device.
 
-It is the on-device follow-up to the thesis in `../chronos-health`. Wellness insights, not
-medical advice.
+It is the on-device follow-up to the thesis in [chronos-health](https://github.com/NikolaJankovikj/chronos-health).
+Wellness insights, not medical advice.
 
 <p>
-<img src="docs/screenshots/today.png" width="19%"> <img src="docs/screenshots/metric.png" width="19%">
-<img src="docs/screenshots/event.png" width="19%"> <img src="docs/screenshots/insights.png" width="19%">
-<img src="docs/screenshots/ask.png" width="19%">
+<img src="report/figures/today.png" width="19%"> <img src="report/figures/metric-advice.png" width="19%">
+<img src="report/figures/event.png" width="19%"> <img src="report/figures/insights.png" width="19%">
+<img src="report/figures/ask.png" width="19%">
 </p>
 
 ## How it works
@@ -37,7 +37,7 @@ HealthKit ──▶ daily series ──▶ Chronos-2 (Core ML) ──▶ expecte
 (resting heart rate: 1.47 vs 1.47 bpm error). It earns its place with ranges from the first
 days, missing nights handled without imputation, and one model for all eight metrics. The
 small language model works best when code has already decided everything. Full write-up in
-`report/report.pdf`.
+[`report/report.pdf`](report/report.pdf).
 
 **Not yet run on an iPhone.** Everything is tested in the iOS 27.2 simulator and on macOS
 (64 package tests and 12 app tests). The nightly background task, a real watch's data and
